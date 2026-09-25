@@ -244,6 +244,14 @@ label.ck .k{color:var(--muted);font-size:13px;font-weight:400}
     </div>
 
     <div class="card">
+      <div class="row between"><h2 style="margin:0">Sleep</h2><span class="muted small" id="sleepTotalTxt"></span></div>
+      <div class="grid g2" style="margin-top:10px">
+        <div><label for="sleepNight">Night sleep (hours)</label><input id="sleepNight" type="number" inputmode="decimal" step="0.5" min="0" max="16" placeholder="0"></div>
+        <div><label for="sleepNap">Nap (hours)</label><input id="sleepNap" type="number" inputmode="decimal" step="0.5" min="0" max="8" placeholder="0"></div>
+      </div>
+    </div>
+
+    <div class="card">
       <h2>Food log</h2>
       <div id="log"></div>
     </div>
@@ -403,12 +411,98 @@ const uid_=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 /* ---------- data ---------- */
 const DEFAULT={configured:false,sex:'male',age:30,weight:75,height:175,activity:'light',goal:'lose',target:null,
   sleep:7,meals:3,workouts:2,sugary:1,eatout:3,late:'sometimes',pref:'none',notes:'',goalWeight:null};
-const S={profile:{...DEFAULT},days:{},weights:{},meals:[],date:todayStr(),tab:'today'};
+const S={profile:{...DEFAULT},days:{},weights:{},meals:[],customFoods:{},date:todayStr(),tab:'today'};
 const LS_KEY='nourishlog:v1';
 
-/* Categories: trad (Saudi & Gulf mains, grills, rice, bread, soup), snack (street food, salads, dips),
-   sweet (desserts/bakery), drink (beverages), dairy, fastfood (chains & Western-style), fruit (fresh fruit & dates), intl (other generic staples) */
+/* Categories: trad, protein, veg, fruit, grain, dairy, cond, global, fastfood, sweet, drink, snack, pack, custom (user-added) */
 const FOODS=[
+ // Protein: meat, poultry, seafood, eggs, legumes, plant protein
+ ['Egg, boiled (1)',78,6,.6,5,'protein'],['Egg, fried (1)',90,6,.4,7,'protein'],['Egg whites (2)',34,7,.5,0,'protein'],
+ ['Omelette, plain (2 eggs)',180,13,2,14,'protein'],['Scrambled eggs (2 eggs)',200,13,2,15,'protein'],
+ ['Chicken breast, grilled (100 g)',165,31,0,3.6,'protein'],['Chicken breast, raw (100 g)',120,22,0,2.6,'protein'],['Chicken thigh, grilled (100 g)',209,26,0,10.9,'protein'],
+ ['Chicken drumstick, roasted (1)',112,14,0,5.8,'protein'],['Whole roasted chicken, no skin (100 g)',190,29,0,7.4,'protein'],['Chicken wings, fried (3 pieces)',280,20,8,19,'protein'],
+ ['Grilled chicken breast (150 g)',250,46,0,5,'protein'],['Turkey breast, roasted (100 g)',135,30,0,1,'protein'],['Duck breast, roasted (100 g)',201,23,0,11,'protein'],['Quail, roasted (1)',210,26,0,11,'protein'],
+ ['Beef steak, grilled (100 g)',271,25,0,18,'protein'],['Beef mince, cooked (100 g)',250,26,0,16,'protein'],['Beef liver, cooked (100 g)',175,27,4,4.9,'protein'],['Chicken liver, cooked (100 g)',167,25,1,6,'protein'],
+ ['Lamb chop, grilled (100 g)',294,25,0,21,'protein'],['Lamb leg, roasted (100 g)',258,26,0,17,'protein'],['Camel meat, cooked (100 g)',150,25,0,5,'protein'],['Rabbit, cooked (100 g)',173,33,0,3.5,'protein'],
+ ['Beef kofta, pan-fried (2 pieces)',260,18,3,20,'protein'],['Beef jerky (30 g)',110,9,3,7,'protein'],['Bone broth (1 cup)',40,10,0,0,'protein'],
+ ['Grilled fish (150 g)',220,34,0,9,'protein'],['Salmon, grilled (150 g)',280,39,0,13,'protein'],['Tuna steak, grilled (150 g)',220,42,0,5,'protein'],['Tuna, canned (1 can)',130,28,0,1,'protein'],
+ ['Hammour fillet, grilled (150 g)',195,36,0,4.5,'protein'],['Mackerel, grilled (100 g)',205,19,0,14,'protein'],['Cod fillet, baked (150 g)',150,33,0,1,'protein'],['Sea bass, grilled (150 g)',180,33,0,4,'protein'],
+ ['Sardines, canned in oil (1 can)',190,23,0,11,'protein'],['Anchovies, canned (5)',40,6,0,1.5,'protein'],
+ ['Shrimp, cooked (100 g)',99,24,.2,.3,'protein'],['Prawns, grilled (6 large)',140,27,1,2,'protein'],['Crab meat, cooked (100 g)',97,19,0,1.5,'protein'],['Squid / calamari, grilled (100 g)',175,18,7,7,'protein'],
+ ['Octopus, grilled (100 g)',164,30,4,2,'protein'],['Mussels, steamed (100 g)',86,12,4,2,'protein'],['Oysters, raw (6)',50,6,3,1.5,'protein'],
+ ['Tofu, firm (100 g)',144,15,3,9,'protein'],['Tempeh (100 g)',195,20,8,11,'protein'],['Cottage cheese (1/2 cup)',110,14,4,4.5,'protein'],
+ ['Chickpeas, cooked (1 cup)',269,15,45,4,'protein'],['Black beans, cooked (1 cup)',227,15,41,1,'protein'],['Kidney beans, cooked (1 cup)',225,15,40,1,'protein'],
+ ['Green lentils, cooked (1 cup)',230,18,40,1,'protein'],['Red lentils, cooked (1 cup)',230,18,40,1,'protein'],['Split peas, cooked (1 cup)',231,16,41,1,'protein'],
+ ['Whey protein shake (1 scoop)',120,24,3,1,'protein'],['Protein bar (1)',220,20,22,8,'protein'],
+ // Vegetables
+ ['Tomato, raw (1 medium)',22,1,5,.2,'veg'],['Cucumber, raw (1 medium)',30,1,6,.2,'veg'],['Carrot, raw (1 medium)',25,.6,6,.1,'veg'],['Carrot, cooked (1 cup)',55,1.2,13,.3,'veg'],
+ ['Broccoli, cooked (1 cup)',55,4,11,.6,'veg'],['Broccoli, raw (1 cup)',31,2.5,6,.3,'veg'],['Cauliflower, cooked (1 cup)',29,2,5,.3,'veg'],
+ ['Spinach, raw (1 cup)',7,1,1,.1,'veg'],['Spinach, cooked (1 cup)',41,5,7,.5,'veg'],['Kale, cooked (1 cup)',36,2.5,7,.5,'veg'],
+ ['Zucchini, cooked (1 cup)',27,2,5,.5,'veg'],['Eggplant, cooked (1 cup)',35,1,8.6,.2,'veg'],['Bell pepper, raw (1 medium)',30,1,7,.3,'veg'],
+ ['Green beans, cooked (1 cup)',44,2.4,10,.4,'veg'],['Peas, cooked (1 cup)',134,8.6,25,.4,'veg'],['Corn, cooked (1 cup)',177,5.4,41,2,'veg'],['Corn on the cob (1 medium)',95,3,22,1.5,'veg'],
+ ['Potato, baked with skin (1 medium)',161,4.3,37,.2,'veg'],['Mashed potato (1 cup)',214,4,35,8.5,'veg'],['Sweet potato, baked (1 medium)',103,2.3,24,.2,'veg'],['Pumpkin, cooked (1 cup)',49,2,12,.2,'veg'],
+ ['Onion, raw (1 medium)',44,1.2,10,.1,'veg'],['Garlic (3 cloves)',13,.6,3,0,'veg'],['Mushrooms, cooked (1 cup)',44,4,8,.7,'veg'],
+ ['Cabbage, raw (1 cup)',22,1,5,.1,'veg'],['Cabbage, cooked (1 cup)',33,1.6,7,.2,'veg'],['Lettuce, raw (1 cup)',5,.5,1,.1,'veg'],['Radish (5)',4,.2,1,0,'veg'],
+ ['Beetroot, cooked (1 cup)',75,3,17,.3,'veg'],['Asparagus, cooked (1 cup)',40,4,7,.4,'veg'],['Brussels sprouts, cooked (1 cup)',56,4,11,.8,'veg'],['Artichoke, cooked (1 medium)',60,4,13,.2,'veg'],
+ ['Okra, cooked (1 cup)',35,3,7,.2,'veg'],['Celery (1 cup)',16,.7,3,.2,'veg'],['Turnip, cooked (1 cup)',34,1.1,8,.1,'veg'],['Leeks, cooked (1 cup)',54,1.3,13,.3,'veg'],
+ ['Green olives (10)',50,.4,3,5,'veg'],['Black olives (10)',40,.3,2,4,'veg'],['Pickles / mkhalel (100 g)',12,.4,2.6,.2,'veg'],
+ ['Molokhia, cooked (1 cup)',75,6,12,1,'veg'],['Vine leaves, raw (10)',30,3,5,.5,'veg'],['Vegetable stir-fry, mixed (1 cup)',120,4,16,5,'veg'],
+ ['Mixed vegetable soup (1 bowl)',110,4,18,3,'veg'],['Coleslaw (1 cup)',150,2,15,10,'veg'],['Guacamole (2 tbsp)',50,1,3,4.5,'veg'],['Avocado (1/2 medium)',120,1.5,6,11,'veg'],['Roasted mixed vegetables (1 cup)',140,3,20,6,'veg'],
+ // Fruit & dates
+ ['Ajwa dates (3)',200,2,53,.3,'fruit'],['Sukkari dates (3)',210,2,54,.3,'fruit'],['Khalas dates (3)',195,2,52,.3,'fruit'],['Medjool dates (2)',133,1,36,0,'fruit'],['Dates (3)',200,1.5,54,.2,'fruit'],
+ ['Banana',105,1.3,27,.4,'fruit'],['Apple',95,.5,25,.3,'fruit'],['Orange (1 medium)',62,1.2,15,.2,'fruit'],['Mandarin / clementine (1)',47,.7,12,.2,'fruit'],['Grapefruit (1/2)',52,1,13,.2,'fruit'],
+ ['Grapes (1 cup)',104,1.1,27,.2,'fruit'],['Watermelon (1 cup)',46,1,12,.2,'fruit'],['Cantaloupe / shammam (1 cup)',53,1.3,13,.3,'fruit'],['Honeydew melon (1 cup)',61,.9,15,.2,'fruit'],
+ ['Strawberries (1 cup)',49,1,12,.5,'fruit'],['Blueberries (1 cup)',84,1.1,21,.5,'fruit'],['Raspberries (1 cup)',64,1.5,15,.8,'fruit'],['Blackberries (1 cup)',62,2,14,.7,'fruit'],
+ ['Pineapple (1 cup)',82,.9,22,.2,'fruit'],['Mango (1 cup)',99,1.4,25,.6,'fruit'],['Papaya (1 cup)',62,.7,16,.2,'fruit'],['Kiwi (1)',42,.8,10,.4,'fruit'],
+ ['Pear (1 medium)',101,.6,27,.2,'fruit'],['Peach (1 medium)',59,1.4,14,.4,'fruit'],['Plum (1 medium)',30,.5,8,.2,'fruit'],['Apricot (3)',50,1.5,12,.4,'fruit'],['Cherries (1 cup)',97,1.6,25,.3,'fruit'],
+ ['Pomegranate (1/2 cup arils)',72,1.5,16,1,'fruit'],['Fig, fresh (2)',74,.8,19,.3,'fruit'],['Fig, dried (3)',105,1.4,27,.4,'fruit'],['Guava (1)',37,1.4,8,.5,'fruit'],
+ ['Lychee (10)',66,.8,17,.4,'fruit'],['Dragon fruit (1 cup)',60,1.2,13,.4,'fruit'],['Passion fruit (2)',36,.8,8,.2,'fruit'],
+ ['Raisins (1/4 cup)',108,1,28,.2,'fruit'],['Prunes / dried plums (5)',114,1,28,.2,'fruit'],['Dried apricots (5)',85,1.2,20,.2,'fruit'],['Coconut, fresh (1/2 cup shredded)',142,1.3,6,13,'fruit'],
+ ['Persimmon (1)',118,1,31,.3,'fruit'],['Star fruit / carambola (1 cup)',41,1,10,.4,'fruit'],['Lemon (1)',17,.6,5,.2,'fruit'],['Lime (1)',20,.5,7,.1,'fruit'],
+ // Grains, breads, cereals & pasta
+ ['White bread, sliced (1 slice)',75,2.6,14,1,'grain'],['Whole-wheat bread (1 slice)',80,4,14,1,'grain'],['Sourdough bread (1 slice)',93,3.6,18,.6,'grain'],['Rye bread (1 slice)',83,2.7,15,1,'grain'],
+ ['Bagel, plain (1)',245,10,48,1.5,'grain'],['Pita bread, white (1)',165,5.5,33,.7,'grain'],['Tortilla, flour (1 medium)',140,4,24,3.5,'grain'],['Tortilla, corn (1)',52,1.4,11,.6,'grain'],
+ ['Baguette (1/4 loaf)',185,7,37,1,'grain'],['English muffin (1)',134,5,26,1,'grain'],['Naan bread (1)',260,9,45,5,'grain'],['Chapati (1)',120,3.5,18,3,'grain'],['Paratha (1)',260,6,30,13,'grain'],
+ ['Waffle (1)',218,6,25,11,'grain'],['Pancake (1 medium)',86,2.4,11,3.5,'grain'],
+ ['Brown rice, cooked (1 cup)',216,5,45,1.8,'grain'],['Basmati rice, cooked (1 cup)',210,4.4,45,.5,'grain'],['Jasmine rice, cooked (1 cup)',205,4.2,44,.4,'grain'],
+ ['Spaghetti, cooked (1 cup)',221,8,43,1.3,'grain'],['Penne pasta, cooked (1 cup)',220,8,43,1.3,'grain'],['Macaroni, cooked (1 cup)',221,8,43,1.3,'grain'],['Whole-wheat pasta, cooked (1 cup)',174,7.5,37,.8,'grain'],
+ ['Couscous, cooked (1 cup)',176,6,37,.3,'grain'],['Quinoa, cooked (1 cup)',222,8,39,3.6,'grain'],['Bulgur, cooked (1 cup)',151,5.6,34,.4,'grain'],['Barley, cooked (1 cup)',193,3.5,44,.7,'grain'],
+ ['Oats, dry (1/2 cup)',150,5,27,3,'grain'],['Oatmeal with milk (1 bowl)',230,9,36,6,'grain'],['Cream of wheat, cooked (1 cup)',133,4,28,.5,'grain'],['Polenta, cooked (1 cup)',145,3.4,31,1,'grain'],
+ ['Cornflakes cereal (1 cup)',100,2,24,.3,'grain'],['Granola (1/2 cup)',300,7,40,13,'grain'],['Muesli (1/2 cup)',170,5,32,3,'grain'],
+ ['Rice cakes (2)',70,1.5,15,.5,'grain'],['Crackers, plain (6)',80,1.5,14,2,'grain'],['Breadsticks (4)',80,2,15,1,'grain'],
+ ['Fava beans, cooked (1 cup)',187,13,33,.6,'grain'],['White beans, cooked (1 cup)',249,17,45,1,'grain'],
+ // Oils, sauces, condiments & spices
+ ['Olive oil (1 tbsp)',119,0,0,13.5,'cond'],['Vegetable oil (1 tbsp)',120,0,0,14,'cond'],['Coconut oil (1 tbsp)',117,0,0,13.6,'cond'],['Sesame oil (1 tbsp)',120,0,0,13.6,'cond'],
+ ['Mayonnaise (1 tbsp)',94,.1,.1,10,'cond'],['Ketchup (1 tbsp)',17,.2,4.5,0,'cond'],['Mustard (1 tbsp)',9,.6,.9,.5,'cond'],['Soy sauce (1 tbsp)',10,1,1,0,'cond'],
+ ['BBQ sauce (1 tbsp)',30,.2,7,.1,'cond'],['Ranch dressing (1 tbsp)',73,.1,.7,7.7,'cond'],['Caesar dressing (1 tbsp)',78,.2,.5,8.3,'cond'],['Vinaigrette dressing (1 tbsp)',60,0,2,6,'cond'],['Balsamic vinegar (1 tbsp)',14,0,3,0,'cond'],
+ ['Tahini (1 tbsp)',89,3,3,8,'cond'],['Honey (1 tbsp)',64,0,17,0,'cond'],['Maple syrup (1 tbsp)',52,0,13,0,'cond'],['Date syrup / dibs (1 tbsp)',60,0,16,0,'cond'],
+ ['White sugar (1 tsp)',16,0,4,0,'cond'],['Brown sugar (1 tsp)',17,0,4.5,0,'cond'],['Jam / marmalade (1 tbsp)',56,.1,14,0,'cond'],['Peanut butter (1 tbsp)',95,4,3,8,'cond'],
+ ['Salsa (2 tbsp)',10,.4,2,0,'cond'],['Hot sauce (1 tsp)',1,0,.2,0,'cond'],['Garlic sauce / toum (1 tbsp)',80,.2,1,9,'cond'],['Harissa (1 tbsp)',12,.4,2,.5,'cond'],
+ ['Pesto sauce (1 tbsp)',80,1,1,8,'cond'],['Tomato paste (1 tbsp)',13,.7,3,.1,'cond'],['Tzatziki (2 tbsp)',30,1,2,2,'cond'],['Worcestershire sauce (1 tbsp)',13,0,3,0,'cond'],
+ ['Cinnamon (1 tsp)',6,.1,2,0,'cond'],['Black pepper (1 tsp)',6,.3,1.5,.1,'cond'],['Cumin (1 tsp)',8,.4,.9,.5,'cond'],['Sumac (1 tsp)',8,.2,1.8,.2,'cond'],["Za'atar spice mix (1 tbsp)",30,1,3,1.5,'cond'],
+ // World dishes
+ ['Spaghetti bolognese (1 plate)',450,22,55,15,'global'],['Fettuccine alfredo (1 plate)',600,18,55,35,'global'],['Lasagna (1 slice)',400,22,35,20,'global'],
+ ['Margherita pizza (2 slices)',480,20,55,20,'global'],['Pepperoni pizza (2 slices)',560,22,55,28,'global'],['Risotto (1 cup)',350,8,55,10,'global'],
+ ['Minestrone soup (1 bowl)',150,6,25,3,'global'],['Caprese salad (1 cup)',220,12,6,17,'global'],['Gnocchi (1 cup)',250,6,48,3,'global'],['Tiramisu (1 slice)',450,6,45,28,'global'],
+ ['Fried rice, chicken (1 plate)',550,22,70,18,'global'],['Chow mein (1 plate)',490,20,65,15,'global'],['Sweet and sour chicken (1 plate)',600,25,70,22,'global'],
+ ['Kung pao chicken (1 plate)',550,30,35,30,'global'],['Spring rolls, fried (2)',160,4,18,8,'global'],['Dumplings, steamed (6)',300,12,40,9,'global'],['Wonton soup (1 bowl)',200,10,20,8,'global'],
+ ["General Tso's chicken (1 plate)",620,28,55,32,'global'],['Beef and broccoli (1 plate)',400,28,20,22,'global'],['Egg fried rice (1 cup)',300,8,45,9,'global'],
+ ['Chicken tikka masala (1 plate)',550,35,25,32,'global'],['Butter chicken (1 plate)',600,32,20,40,'global'],['Chana masala (1 cup)',280,12,42,7,'global'],['Dal makhani (1 cup)',300,12,30,15,'global'],
+ ['Palak paneer (1 cup)',300,14,12,22,'global'],['Chicken biryani, Indian-style (1 plate)',600,28,70,20,'global'],['Samosa, fried (2)',260,6,28,14,'global'],
+ ['Naan with butter (1)',300,9,45,9,'global'],['Tandoori chicken (2 pieces)',350,40,4,18,'global'],['Vegetable curry (1 cup)',220,5,25,11,'global'],['Raita (1/2 cup)',70,3,6,3,'global'],
+ ['Chicken taco (1)',180,12,15,9,'global'],['Beef burrito (1)',550,25,60,22,'global'],['Nachos with cheese (1 plate)',600,18,55,35,'global'],['Quesadilla, cheese (1)',450,18,35,26,'global'],
+ ['Enchiladas (2)',450,20,40,22,'global'],['Fajitas, chicken (1 plate)',480,30,40,20,'global'],['Chili con carne (1 bowl)',350,22,25,17,'global'],
+ ['Sushi roll, California (8 pieces)',260,9,40,7,'global'],['Sushi roll, salmon (8 pieces)',300,14,40,8,'global'],['Sashimi, salmon (6 pieces)',180,25,0,8,'global'],
+ ['Chicken teriyaki (1 plate)',450,30,45,15,'global'],['Ramen noodle soup (1 bowl)',450,18,55,15,'global'],['Miso soup (1 bowl)',40,3,5,1,'global'],['Tempura, mixed (6 pieces)',350,10,35,18,'global'],
+ ['Katsu curry, chicken (1 plate)',650,28,70,25,'global'],['Gyoza, pan-fried (6)',300,12,35,12,'global'],
+ ['Doner kebab plate (1)',600,30,55,28,'global'],['Lahmacun (1)',250,10,35,8,'global'],['Pide, cheese (1)',450,18,55,17,'global'],['Iskender kebab (1 plate)',650,35,40,35,'global'],
+ ['Mansaf (1 plate)',700,35,55,35,'global'],['Musakhan (1 plate)',550,28,55,22,'global'],['Kibbeh nayyeh (100 g)',220,15,15,12,'global'],
+ ['Mac and cheese (1 cup)',350,13,35,17,'global'],['Clam chowder (1 bowl)',250,10,20,15,'global'],['BBQ ribs (3 ribs)',450,28,10,32,'global'],['Fried chicken, Southern-style (2 pieces)',430,28,15,28,'global'],
+ ['Cobb salad (1 bowl)',450,30,15,30,'global'],['Caesar salad with chicken (1 bowl)',400,30,12,25,'global'],['Philly cheesesteak sandwich (1)',600,30,50,30,'global'],['Clubhouse sandwich (1)',550,28,45,28,'global'],
+ ['Waffles with syrup (2)',430,7,60,17,'global'],['Pancakes with syrup (3)',430,8,65,13,'global'],['French toast (2 slices)',350,10,45,13,'global'],['Eggs benedict (1 serving)',450,19,30,28,'global'],
+ ['Greek salad (1 bowl)',230,6,12,18,'global'],['Moussaka (1 slice)',400,18,20,28,'global'],['Souvlaki, chicken (2 skewers)',320,32,5,18,'global'],['Paella, seafood (1 plate)',500,25,60,15,'global'],
+ ['Beef bulgogi (1 plate)',450,30,25,24,'global'],['Bibimbap (1 bowl)',550,20,75,18,'global'],['Pad thai (1 plate)',500,18,60,18,'global'],['Green curry, Thai (1 cup)',350,15,20,24,'global'],
+ ['Tom yum soup (1 bowl)',120,8,10,6,'global'],['Satay skewers, chicken (4)',280,25,8,17,'global'],
  // Saudi & Gulf mains, grills, rice, bread, soup
  ['Chicken kabsa (1 plate)',650,32,80,20,'trad'],['Lamb kabsa (1 plate)',750,35,75,35,'trad'],['Camel meat kabsa (1 plate)',700,38,70,30,'trad'],
  ['Chicken mandi (1 plate)',600,30,75,18,'trad'],['Lamb mandi (1 plate)',720,34,70,32,'trad'],['Chicken majboos (1 plate)',600,29,72,18,'trad'],
@@ -422,36 +516,61 @@ const FOODS=[
  ['Shish tawook (2 skewers)',280,35,3,12,'trad'],['Lamb kebab mishwi (2 skewers)',350,30,5,22,'trad'],['Kofta kebab (2 skewers)',320,22,5,23,'trad'],
  ['Grilled liver / kebda (100 g)',180,22,2,9,'trad'],['Chicken mishkak skewer (1)',150,18,2,7,'trad'],['Grilled hammour fish (150 g)',200,35,0,6,'trad'],['Grilled kingfish (150 g)',210,34,0,7,'trad'],
  ['Arabic bread / khubz (1)',165,5,33,1,'trad'],['Samoli bread (1)',180,6,34,2,'trad'],['Tamees bread (1)',220,6,38,5,'trad'],['Khamir sweet bread (1)',250,6,45,6,'trad'],
- // Street snacks, salads & dips
+ ['Areeka (rice & meat porridge, 1 bowl)',400,20,50,13,'trad'],['Qursan (Eastern-province layered bread stew, 1 bowl)',420,20,52,14,'trad'],['Aseeda (1 bowl)',300,6,60,3,'trad'],
+ ['Balaleet (sweet vermicelli with egg, 1 plate)',350,10,50,12,'trad'],['Khameer with cheese (1)',280,9,38,9,'trad'],['Saudi grilled liver sandwich (1)',320,18,30,14,'trad'],
+ ['Hunaini (grilled meat with rice, 1 plate)',600,30,60,22,'trad'],['Farooj mashwi, whole grilled chicken (1/2 chicken)',450,45,2,28,'trad'],['Saudi rice pudding / muhalabia (1 bowl)',220,4,35,7,'trad'],
+ ['Gurssan (1 bowl)',400,18,52,12,'trad'],['Marqooqa with chicken (1 bowl)',420,22,48,14,'trad'],['Saudi fish soup (1 bowl)',180,15,15,7,'trad'],
+ // Street snacks, salads, dips, nuts & crunchy snacks
  ['Sambousa, meat (1 piece)',120,4,10,7,'snack'],['Sambousa, cheese (1 piece)',130,4,11,8,'snack'],['Manakish zaatar (1)',280,7,40,10,'snack'],['Manakish cheese (1)',320,12,35,14,'snack'],
  ['Fatayer spinach (1)',150,4,18,7,'snack'],['Sfeeha meat pie (1)',180,8,16,9,'snack'],['Falafel (3)',170,6,16,10,'snack'],['Hummus (100 g)',170,8,14,10,'snack'],
  ['Baba ghanoush (100 g)',130,3,8,10,'snack'],['Tabbouleh salad (1 cup)',140,3,17,7,'snack'],['Fattoush salad (1 cup)',150,3,15,9,'snack'],
- ['Stuffed grape leaves / warak enab (4)',180,4,26,7,'snack'],['Kibbeh, fried (3 pieces)',300,14,25,17,'snack'],['Green salad with olive oil',120,2,8,9,'snack'],
+ ['Stuffed grape leaves / warak enab (4)',180,4,26,7,'snack'],['Kibbeh, fried (3 pieces)',300,14,25,17,'snack'],['Green salad with olive oil',120,2,8,9,'snack'],['Almonds (28 g)',165,6,6,14,'snack'],
+ ['Cashews (28 g)',157,5,9,12,'snack'],['Walnuts (28 g)',185,4,4,18,'snack'],['Pistachios (28 g)',159,6,8,13,'snack'],['Peanuts, roasted (28 g)',166,7,6,14,'snack'],
+ ['Sunflower seeds (28 g)',165,5,6,14,'snack'],['Pumpkin seeds (28 g)',151,7,5,13,'snack'],['Trail mix (1/4 cup)',175,5,15,11,'snack'],
+ ['Popcorn, air-popped (2 cups)',60,2,12,.7,'snack'],['Popcorn, buttered (2 cups)',110,2,12,6,'snack'],['Pretzels (1 oz)',108,3,22,1,'snack'],['Rice crackers (10)',100,1.5,22,.5,'snack'],
+ ['Granola bar (1)',120,2,20,4,'snack'],['Dried mango (1 oz)',90,.5,22,.2,'snack'],['Banana chips (1 oz)',147,.7,17,9.5,'snack'],['Seaweed snack (1 pack)',30,1,3,1.5,'snack'],
+ ['Cheese puffs (1 oz)',160,2,15,10,'snack'],['Veggie chips (1 oz)',130,1,17,7,'snack'],['Hummus with pita chips (1 serving)',250,7,28,12,'snack'],
  // Sweets & bakery
  ['Kunafa (1 slice)',350,7,45,16,'sweet'],['Basbousa (1 piece)',250,4,38,9,'sweet'],['Umm Ali (1 bowl)',400,8,45,20,'sweet'],['Luqaimat (5 pieces)',300,4,45,12,'sweet'],
  ['Baklava (2 pieces)',280,4,32,15,'sweet'],['Maamoul date cookies (2)',260,4,40,9,'sweet'],['Halawa tahini (2 tbsp)',180,4,15,12,'sweet'],['Qatayef (3 pieces)',320,6,45,13,'sweet'],
  ['Croissant (1)',230,5,26,12,'sweet'],['Chocolate muffin (1)',350,5,50,15,'sweet'],['Donut (1)',260,4,30,13,'sweet'],['Chocolate bar',230,3,26,13,'sweet'],
+ ['Ice cream sundae (1)',350,5,45,18,'sweet'],['Cheesecake (1 slice)',400,7,32,28,'sweet'],['Red velvet cake (1 slice)',380,4,52,17,'sweet'],['Brownie (1 piece)',280,3,36,15,'sweet'],
+ ['Cookies, chocolate chip (2)',200,2,28,10,'sweet'],['Oreo cookies (3)',160,1.5,25,7,'sweet'],['Cinnamon roll (1)',350,5,52,14,'sweet'],['Apple pie (1 slice)',320,3,45,15,'sweet'],
+ ['Cupcake, frosted (1)',300,3,40,15,'sweet'],['Marshmallows (10)',230,1,58,0,'sweet'],['Gummy bears (1 small bag)',140,0,35,0,'sweet'],["M&M's (1 small bag)",240,2,34,10,'sweet'],
+ ['Snickers bar',250,4,33,12,'sweet'],['Twix bar',250,2,34,12,'sweet'],['Ferrero Rocher (3 pieces)',270,4,24,18,'sweet'],["Turkish delight (4 pieces)",180,.5,42,.5,'sweet'],
+ ['Ice cream cone (1)',250,4,30,12,'sweet'],['Popsicle (1)',60,0,15,0,'sweet'],
  // Drinks
  ['Saudi qahwa with dates (1 cup + 3 dates)',210,1.5,50,0,'drink'],['Arabic coffee (1 cup)',5,0,1,0,'drink'],['Karak / sweet tea',110,3,17,3,'drink'],['Sahlab (1 cup)',200,5,30,7,'drink'],
  ['Laban, salted yogurt drink (1 cup)',110,6,9,5,'drink'],['Vimto drink (1 cup)',140,0,35,0,'drink'],['Jallab (1 cup)',160,0,40,0,'drink'],['Tamarind drink / tamr hindi (1 cup)',130,0,32,0,'drink'],
  ['Qamar Din apricot drink (1 cup)',150,0,37,0,'drink'],['Sous, licorice drink (1 cup)',90,0,22,0,'drink'],['Avocado milk juice (1 cup)',280,6,35,13,'drink'],['Fresh mango juice (1 cup)',130,1,32,0,'drink'],
  ['Cola (1 can)',140,0,39,0,'drink'],['Fanta orange (1 can)',150,0,40,0,'drink'],['Rani juice box (1)',120,0,30,0,'drink'],['Latte (medium)',190,10,18,7,'drink'],
- // Dairy & packaged products
+ ['Cappuccino, medium',120,8,10,6,'drink'],['Espresso shot (1)',3,.1,.5,0,'drink'],['Americano, medium',10,.5,1.5,0,'drink'],['Iced coffee, sweetened (medium)',150,2,30,3,'drink'],
+ ['Green tea, unsweetened (1 cup)',2,0,.5,0,'drink'],['Black tea with milk (1 cup)',40,1.5,5,1.5,'drink'],['Hot chocolate (1 cup)',190,8,27,6,'drink'],
+ ['Smoothie, mixed berry (1 cup)',180,2,42,1,'drink'],['Protein shake, ready-made (1 bottle)',160,20,10,4,'drink'],['Energy drink (1 can)',110,0,28,0,'drink'],['Sports drink / Gatorade (1 bottle)',140,0,36,0,'drink'],
+ ['Coconut water (1 cup)',46,2,9,.5,'drink'],['Sparkling water, flavored (1 can)',0,0,0,0,'drink'],['Lemonade (1 cup)',130,0,34,0,'drink'],
+ ['Orange juice, fresh (1 cup)',110,1.7,26,.5,'drink'],['Apple juice (1 cup)',114,.2,28,.3,'drink'],['Grape juice (1 cup)',152,.4,37,.2,'drink'],['Milkshake, chocolate (1 cup)',350,9,60,9,'drink'],
+ // Dairy
  ['Almarai laban (1 cup)',120,6,10,6,'dairy'],['Almarai full-fat milk (1 cup)',150,8,12,8,'dairy'],['Almarai yogurt (1 cup)',140,7,14,6,'dairy'],['Nadec laban (1 cup)',110,6,9,5,'dairy'],
  ['Jameed, dried yogurt (2 tbsp)',60,4,4,3,'dairy'],['Labneh (2 tbsp)',60,3,2,4.5,'dairy'],['Milk (1 cup)',150,8,12,8,'dairy'],['Cheese slice',80,5,1,6,'dairy'],['Greek yogurt (170 g)',100,17,6,.7,'dairy'],
+ ['Skim milk (1 cup)',90,9,12,.5,'dairy'],['2% milk (1 cup)',122,8,12,5,'dairy'],['Almond milk, unsweetened (1 cup)',39,1.5,3.5,2.5,'dairy'],['Soy milk (1 cup)',105,6,12,4,'dairy'],['Oat milk (1 cup)',120,3,16,5,'dairy'],
+ ['Coconut milk, canned (1/4 cup)',110,1,3,11,'dairy'],['Heavy cream (1 tbsp)',52,.3,.4,5.5,'dairy'],['Sour cream (1 tbsp)',23,.3,.5,2.3,'dairy'],['Cream cheese (1 tbsp)',50,1,1,5,'dairy'],
+ ['Mozzarella cheese (1 oz)',85,6,1,6.5,'dairy'],['Cheddar cheese (1 oz)',114,7,.4,9.4,'dairy'],['Feta cheese (1 oz)',75,4,1.2,6,'dairy'],['Parmesan cheese (1 tbsp)',22,2,.2,1.5,'dairy'],
+ ['Halloumi, grilled (1 oz)',110,7,1,9,'dairy'],['Ricotta cheese (1/2 cup)',214,14,8,16,'dairy'],['Plain yogurt, whole milk (1 cup)',149,9,11,8,'dairy'],['Low-fat yogurt (1 cup)',154,13,17,3.8,'dairy'],
+ ['Yogurt with fruit (1 cup)',190,8,32,3,'dairy'],['Skyr yogurt (1 cup)',140,20,8,.5,'dairy'],['Kefir (1 cup)',110,9,12,2,'dairy'],['Ice cream, vanilla (1/2 cup)',137,2.3,16,7.3,'dairy'],
+ ['Frozen yogurt (1/2 cup)',110,3,20,2,'dairy'],['Whipped cream (2 tbsp)',52,.3,3,4.4,'dairy'],['Butter (1 tbsp)',102,.1,0,11.5,'dairy'],['Ghee (1 tbsp)',112,0,0,12.7,'dairy'],
+ ['Evaporated milk (2 tbsp)',40,2,3,2.2,'dairy'],['Condensed milk, sweetened (1 tbsp)',60,1.5,10,1.5,'dairy'],
  // Fast food chains & Western-style
  ['Al Baik fried chicken (2 pieces)',480,28,20,32,'fastfood'],['Al Baik chicken sandwich',420,20,38,20,'fastfood'],['Al Baik fries (medium)',320,4,42,15,'fastfood'],
  ['Herfy beef burger',480,22,40,25,'fastfood'],['Herfy chicken burger',460,24,42,22,'fastfood'],['Kudu shawarma sandwich',450,22,42,20,'fastfood'],
  ['Chicken shawarma wrap',500,30,45,22,'fastfood'],['Shawarma plate with rice',650,30,70,25,'fastfood'],['Pizza slice',285,12,36,10,'fastfood'],
  ['Burger with bun',550,28,40,30,'fastfood'],['French fries (medium)',365,4,48,17,'fastfood'],
- // Fresh fruit & dates
- ['Ajwa dates (3)',200,2,53,.3,'fruit'],['Sukkari dates (3)',210,2,54,.3,'fruit'],['Khalas dates (3)',195,2,52,.3,'fruit'],['Medjool dates (2)',133,1,36,0,'fruit'],
- ['Dates (3)',200,1.5,54,.2,'fruit'],['Banana',105,1.3,27,.4,'fruit'],['Apple',95,.5,25,.3,'fruit'],
- // Other common staples
- ['Egg, boiled (1)',78,6,.6,5,'intl'],['Grilled chicken breast (150 g)',250,46,0,5,'intl'],['Grilled fish (150 g)',220,34,0,9,'intl'],
- ['Oatmeal with milk (1 bowl)',230,9,36,6,'intl'],['Almonds (28 g)',165,6,6,14,'intl'],['Whole-wheat bread (1 slice)',80,4,14,1,'intl'],
- ['Peanut butter (1 tbsp)',95,4,3,8,'intl'],['Tuna, canned (1 can)',130,28,0,1,'intl'],
- // Packaged & branded products commonly sold in Saudi Arabia
+ ["McDonald's Big Mac",563,26,45,33,'fastfood'],["McDonald's Cheeseburger",300,15,33,13,'fastfood'],["McDonald's Chicken McNuggets (6)",250,14,15,15,'fastfood'],
+ ["McDonald's Fries, medium",320,4,42,15,'fastfood'],["McDonald's McChicken",400,14,40,20,'fastfood'],['KFC Original Recipe chicken (1 piece)',320,20,10,20,'fastfood'],
+ ['KFC Zinger Burger',450,22,40,23,'fastfood'],['KFC Popcorn Chicken, small',280,17,17,17,'fastfood'],['Subway 6-inch turkey sandwich',280,18,42,4.5,'fastfood'],['Subway 6-inch chicken teriyaki',370,24,50,6,'fastfood'],
+ ["Domino's Pizza, pepperoni (2 slices)",600,24,60,30,'fastfood'],["Domino's Pizza, margherita (2 slices)",480,20,55,20,'fastfood'],['Burger King Whopper',657,28,49,40,'fastfood'],['Burger King Chicken Royale',450,20,45,22,'fastfood'],
+ ['Pizza Hut Pan Pizza (2 slices)',530,22,50,27,'fastfood'],["Hardee's / Carl's Jr. Famous Star",590,27,42,35,'fastfood'],['Starbucks Caffè Latte, grande',190,13,18,7,'fastfood'],['Starbucks Frappuccino, grande',370,5,60,14,'fastfood'],
+ ["Dunkin' Donuts glazed donut",260,3,33,14,'fastfood'],['Krispy Kreme original glazed donut',190,2,22,11,'fastfood'],
+ // Fresh fruit & dates specialty and dates already above; Packaged & branded products
  ['Almarai Chocolate Milk (200 ml)',180,7,25,6,'pack'],['Almarai Cheddar Cheese (1 slice)',100,6,1,8,'pack'],['Almarai Cream Cheese Spread (1 tbsp)',50,1,1,5,'pack'],
  ['Almarai Fresh Juice, orange (200 ml)',90,1,21,0,'pack'],['Almarai Fresh Juice, mango (200 ml)',100,0,24,0,'pack'],['Almarai Butter (1 tbsp)',100,0,0,11,'pack'],
  ['Nadec Full-Fat Milk (1 cup)',150,8,12,8,'pack'],['Nadec Apple Juice (200 ml)',95,0,23,0,'pack'],['Nadec Cheese Triangles (1 piece)',50,2,1,4,'pack'],
@@ -462,9 +581,13 @@ const FOODS=[
  ['Pepsi (1 can)',150,0,41,0,'pack'],['Mirinda Orange (1 can)',160,0,44,0,'pack'],['7Up (1 can)',145,0,39,0,'pack'],['Sprite (1 can)',140,0,38,0,'pack'],['Nescafé 3-in-1 (1 sachet)',80,1,14,2,'pack'],
  ['Bateel Premium Dates (3)',210,2,52,.5,'pack'],['Al Foah Dates (3)',200,2,53,.3,'pack'],['Patchi Chocolate (3 pieces)',220,3,24,13,'pack'],
  ["Chipsy Potato Chips, small bag",160,2,15,10,'pack'],["Lay's Chips, small bag",150,2,15,10,'pack'],['Twisties, small bag',170,2,17,11,'pack'],
- ["Kellogg's Corn Flakes with milk (1 bowl)",200,7,38,3,'pack'],['Nutella (1 tbsp)',100,1,11,6,'pack'],['KitKat (2 fingers)',107,1,13,6,'pack'],['Galaxy Chocolate (1 bar)',240,3,26,14,'pack']
+ ["Kellogg's Corn Flakes with milk (1 bowl)",200,7,38,3,'pack'],["Kellogg's Corn Flakes, dry (1 cup)",100,2,24,.3,'pack'],['Nutella (1 tbsp)',100,1,11,6,'pack'],['KitKat (2 fingers)',107,1,13,6,'pack'],['Galaxy Chocolate (1 bar)',240,3,26,14,'pack'],
+ ['Kraft Mac & Cheese, prepared (1 cup)',350,10,48,12,'pack'],['Quaker Oats, prepared (1 packet)',100,4,19,2,'pack'],['Pringles, small can (1/3 can)',150,1.5,15,10,'pack'],
+ ['Nesquik chocolate milk (1 cup)',210,8,30,7,'pack'],['Laughing Cow cheese wedge (1)',50,2,1,4,'pack'],['Lipton Yellow Label Tea (1 cup)',2,0,.5,0,'pack'],
+ ['Dove Chocolate (1 bar)',220,3,24,13,'pack'],['Snickers, King Size',510,9,64,26,'pack'],['Doritos Nacho Cheese, small bag',150,2,16,9,'pack'],['Cheetos, small bag',160,2,15,10,'pack'],
+ ['Al Marai Laban Up (1 cup)',130,6,15,5,'pack'],['Rani Float, mango (1 box)',110,0,27,0,'pack']
 ].map(a=>({n:a[0],k:a[1],p:a[2],c:a[3],f:a[4],cat:a[5]}));
-const CATS=[['all','All'],['trad','Saudi & Gulf'],['pack','Packaged & branded'],['fastfood','Fast food'],['sweet','Sweets & bakery'],['drink','Drinks'],['dairy','Dairy'],['snack','Snacks & salads'],['fruit','Dates & fruit'],['intl','Other staples']];
+const CATS=[['all','All'],['trad','Saudi & Gulf'],['protein','Meat, poultry & seafood'],['veg','Vegetables'],['fruit','Fruit & dates'],['grain','Grains & bread'],['dairy','Dairy & eggs'],['cond','Oils, sauces & spices'],['global','World dishes'],['fastfood','Fast food'],['sweet','Sweets & bakery'],['drink','Drinks'],['snack','Snacks & nuts'],['pack','Packaged & branded'],['custom','My foods']];
 
 const IDEAS=[
  {n:'Oatmeal with milk, banana and a few almonds',k:380,m:'b',t:['veg']},
@@ -530,13 +653,13 @@ let FUID=null,sampleFn=null,downloadsFn=null;
 const timers={};
 function lsKey(){return LS_KEY+':'+(FUID||'anon')}
 function persistLocal(){
-  try{localStorage.setItem(lsKey(),JSON.stringify({profile:S.profile,days:S.days,weights:S.weights,meals:S.meals}))}catch(e){}
+  try{localStorage.setItem(lsKey(),JSON.stringify({profile:S.profile,days:S.days,weights:S.weights,meals:S.meals,customFoods:S.customFoods}))}catch(e){}
 }
 function loadLocal(){
   try{
     const raw=localStorage.getItem(lsKey());
-    if(raw){const o=JSON.parse(raw);S.profile={...DEFAULT,...(o.profile||{})};S.days=o.days||{};S.weights=o.weights||{};S.meals=Array.isArray(o.meals)?o.meals:[];}
-    else{S.profile={...DEFAULT};S.days={};S.weights={};S.meals=[];}
+    if(raw){const o=JSON.parse(raw);S.profile={...DEFAULT,...(o.profile||{})};S.days=o.days||{};S.weights=o.weights||{};S.meals=Array.isArray(o.meals)?o.meals:[];S.customFoods=o.customFoods||{};}
+    else{S.profile={...DEFAULT};S.days={};S.weights={};S.meals=[];S.customFoods={};}
   }catch(e){}
 }
 function setSync(t){$('#sync').textContent=t}
@@ -548,8 +671,8 @@ async function fbSaveProfile(){
 }
 async function fbSaveDay(d){
   if(!fbReady||!FUID)return;
-  const day=S.days[d]||{entries:[],water:0};
-  try{await firebase.database().ref(fbBase()+'days/'+d).set({entries:day.entries||[],water:day.water||0});setSync('Synced to Firebase')}
+  const day=S.days[d]||{entries:[],water:0,sleepNight:0,sleepNap:0};
+  try{await firebase.database().ref(fbBase()+'days/'+d).set({entries:day.entries||[],water:day.water||0,sleepNight:day.sleepNight||0,sleepNap:day.sleepNap||0});setSync('Synced to Firebase')}
   catch(e){setSync('Saved on this device (offline)')}
 }
 async function fbSaveWeights(){
@@ -560,6 +683,11 @@ async function fbSaveWeights(){
 async function fbSaveMeals(){
   if(!fbReady||!FUID)return;
   try{await firebase.database().ref(fbBase()+'meals').set(S.meals||[]);setSync('Synced to Firebase')}
+  catch(e){setSync('Saved on this device (offline)')}
+}
+async function fbSaveCustomFoods(){
+  if(!fbReady||!FUID)return;
+  try{await firebase.database().ref(fbBase()+'customFoods').set(S.customFoods||{});setSync('Synced to Firebase')}
   catch(e){setSync('Saved on this device (offline)')}
 }
 function saveDay(d){
@@ -582,6 +710,11 @@ function saveMeals(){
   clearTimeout(timers.meals);
   timers.meals=setTimeout(fbSaveMeals,500);
 }
+function saveCustomFoods(){
+  persistLocal();
+  clearTimeout(timers.customFoods);
+  timers.customFoods=setTimeout(fbSaveCustomFoods,500);
+}
 async function pullFromFirebase(){
   if(!fbReady||!FUID)return;
   const snap=await firebase.database().ref(fbBase()).once('value');
@@ -592,10 +725,12 @@ async function pullFromFirebase(){
   else if(Object.keys(S.weights).length)await fbSaveWeights();
   if(data.meals)S.meals=Array.isArray(data.meals)?data.meals:Object.values(data.meals);
   else if(S.meals.length)await fbSaveMeals();
+  if(data.customFoods&&typeof data.customFoods==='object')S.customFoods=data.customFoods;
+  else if(Object.keys(S.customFoods).length)await fbSaveCustomFoods();
   if(data.days&&typeof data.days==='object'){
     Object.keys(data.days).forEach(d=>{
       const x=data.days[d]||{};
-      S.days[d]={entries:Array.isArray(x.entries)?x.entries:(x.entries?Object.values(x.entries):[]),water:x.water||0};
+      S.days[d]={entries:Array.isArray(x.entries)?x.entries:(x.entries?Object.values(x.entries):[]),water:x.water||0,sleepNight:x.sleepNight||0,sleepNap:x.sleepNap||0};
     });
   }
   persistLocal();
@@ -619,7 +754,7 @@ function macroTargets(){
   const carb=Math.max(0,R((t-prot*4-fat*9)/4));
   return{p:prot,f:fat,c:carb};
 }
-function dayOf(d){return S.days[d]||(S.days[d]={entries:[],water:0})}
+function dayOf(d){return S.days[d]||(S.days[d]={entries:[],water:0,sleepNight:0,sleepNap:0})}
 function totals(d){
   const e=(S.days[d]&&S.days[d].entries)||[];
   return e.reduce((a,x)=>({k:a.k+(x.k||0),p:a.p+(x.p||0),c:a.c+(x.c||0),f:a.f+(x.f||0)}),{k:0,p:0,c:0,f:0});
@@ -675,6 +810,13 @@ function renderWater(){
   $('#water').innerHTML=h;
   $('#waterTxt').textContent=w+' glasses · ≈ '+(w*0.25).toFixed(2).replace(/\.?0+$/,'')+' L';
 }
+function renderSleep(){
+  const d=dayOf(S.date),night=d.sleepNight||0,nap=d.sleepNap||0;
+  $('#sleepNight').value=night||'';
+  $('#sleepNap').value=nap||'';
+  const total=night+nap;
+  $('#sleepTotalTxt').textContent=total?total.toFixed(1).replace(/\.0$/,'')+' h total':'Not logged yet';
+}
 let foodCat='all';
 function buildCatRow(){
   $('#catRow').innerHTML=CATS.map(c=>'<button class="chip'+(c[0]===foodCat?' on':'')+'" data-c="'+c[0]+'">'+c[1]+'</button>').join('');
@@ -687,10 +829,14 @@ $('#catRow').addEventListener('click',e=>{
 });
 function renderChips(){
   const q=$('#foodSearch').value.trim().toLowerCase();
-  const pool=foodCat==='all'?FOODS:FOODS.filter(f=>f.cat===foodCat);
+  const customArr=Object.values(S.customFoods).map(x=>({...x,cat:'custom'})).reverse();
+  const allFoods=FOODS.concat(customArr);
+  const pool=foodCat==='all'?allFoods:allFoods.filter(f=>f.cat===foodCat);
   let list=[];
   if(q){
     list=pool.filter(f=>f.n.toLowerCase().includes(q)).slice(0,14);
+  }else if(foodCat==='custom'){
+    list=customArr.length?customArr.slice(0,40):[];
   }else if(foodCat!=='all'){
     list=pool.slice(0,28);
   }else{
@@ -699,9 +845,9 @@ function renderChips(){
       const key=x.n.toLowerCase();
       if(!seen.has(key)&&recent.length<5){seen.add(key);const s=x.s||1;recent.push({n:x.n,k:x.k/s,p:x.p/s,c:x.c/s,f:x.f/s,recent:true})}
     }));
-    list=recent.concat(FOODS.filter(f=>!seen.has(f.n.toLowerCase())).slice(0,9));
+    list=recent.concat(allFoods.filter(f=>!seen.has(f.n.toLowerCase())).slice(0,9));
   }
-  $('#chips').innerHTML=list.length?list.map((f,i)=>'<button class="chip" data-i="'+i+'">'+esc(f.n)+' <small>'+R(f.k)+'</small></button>').join(''):'<span class="muted small">No match in this category — try "All" or enter it manually below.</span>';
+  $('#chips').innerHTML=list.length?list.map((f,i)=>'<button class="chip" data-i="'+i+'">'+esc(f.n)+' <small>'+R(f.k)+'</small></button>').join(''):(foodCat==='custom'?'<span class="muted small">Nothing saved yet — foods you add manually will appear here automatically.</span>':'<span class="muted small">No match in this category — try "All" or enter it manually below.</span>');
   $('#chips')._list=list;
 }
 function updatePreview(){
@@ -773,7 +919,9 @@ function buildSuggestions(){
   if(isToday&&hour>=14&&water<4)add(2,'warn','💧','Drink more water','Only '+water+' glasses so far. Thirst is often mistaken for hunger — aim for 8 glasses (2 L), especially in hot weather.');
   else if(water<8&&(!isToday||hour>=20))add(4,'tip','💧','Water: '+water+' / 8 glasses','Try a glass before each meal; it helps portion control and energy.');
 
-  if(p.sleep<6.5)add(3,'warn','😴','Short sleep raises appetite','At '+p.sleep+' h of sleep, hunger hormones push you toward sugary, high-calorie food. Shifting bedtime 30 minutes earlier can help more than willpower.');
+  const loggedSleep=(dayOf(S.date).sleepNight||0)+(dayOf(S.date).sleepNap||0);
+  const sleepHrs=loggedSleep>0?loggedSleep:p.sleep;
+  if(sleepHrs<6.5)add(3,'warn','😴','Short sleep raises appetite','At '+sleepHrs.toFixed(1).replace(/\.0$/,'')+' h of sleep'+(loggedSleep>0?' today':'')+', hunger hormones push you toward sugary, high-calorie food. Shifting bedtime 30 minutes earlier can help more than willpower.');
   if(p.late==='often')add(3,'tip','🌙','Late-night snacking','Plan a 150–200 kcal evening snack (yogurt, fruit, a few almonds) and "close the kitchen" 2–3 hours before bed. Eating a proper protein-rich dinner reduces late cravings.');
   else if(p.late==='sometimes'&&tot.k>T*.9&&isToday&&hour>=20)add(4,'tip','🌙','Evening cravings','You are near your limit for the day. Brush your teeth or make herbal tea after dinner — it signals that eating is over.');
   if(p.sugary>=2)add(3,'tip','🥤','Liquid calories add up','About '+p.sugary+' sugary drinks a day is ~'+R(p.sugary*140*7)+' kcal a week. Swapping them for sparkling water, unsweetened tea or karak with less sugar is one of the easiest wins.');
@@ -1249,7 +1397,7 @@ function renderAll(){
   $('#dateLabel').textContent=fmtDate(S.date);
   $('#nextDay').disabled=S.date>=addDays(todayStr(),1);
   $('#setupBanner').hidden=S.profile.configured;
-  renderSummary();renderLog();renderWater();renderChips();renderMeals();renderSugs();
+  renderSummary();renderLog();renderWater();renderSleep();renderChips();renderMeals();renderSugs();
   if(S.tab==='week')renderWeek();
   if(S.tab==='progress')renderProgress();
 }
@@ -1274,13 +1422,24 @@ $('#chips').addEventListener('click',e=>{
   updatePreview();$('#fServ').focus();
 });
 ['#fServ','#fKcal'].forEach(id=>$(id).addEventListener('input',updatePreview));
+function upsertCustomFood(n,k,p,c,f){
+  const name=n.trim();if(!name)return;
+  const key=name.toLowerCase();
+  let foundId=null;
+  for(const id in S.customFoods){if(S.customFoods[id].n.toLowerCase()===key){foundId=id;break}}
+  const rec={n:name.slice(0,80),k,p,c,f};
+  if(foundId)S.customFoods[foundId]=rec;else S.customFoods[uid_()]=rec;
+  saveCustomFoods();
+}
 function addFood(){
   const name=$('#fName').value.trim(),s=parseFloat($('#fServ').value),k=parseFloat($('#fKcal').value);
   if(!name){$('#fName').focus();return}
   if(!(s>0)||isNaN(k)||k<0){$('#fKcal').focus();return}
-  const g=id=>(parseFloat($(id).value)||0)*s;
-  dayOf(S.date).entries.push({id:uid_(),n:name.slice(0,80),meal:$('#fMeal').value,s:s,k:k*s,p:g('#fP'),c:g('#fC'),f:g('#fF')});
+  const pPer=parseFloat($('#fP').value)||0,cPer=parseFloat($('#fC').value)||0,fPer=parseFloat($('#fF').value)||0;
+  const g=per=>per*s;
+  dayOf(S.date).entries.push({id:uid_(),n:name.slice(0,80),meal:$('#fMeal').value,s:s,k:k*s,p:g(pPer),c:g(cPer),f:g(fPer)});
   saveDay(S.date);
+  upsertCustomFood(name,k,pPer,cPer,fPer);
   ['#fName','#fKcal','#fP','#fC','#fF','#foodSearch'].forEach(id=>$(id).value='');
   $('#fServ').value=1;updatePreview();renderAll();
 }
@@ -1298,6 +1457,12 @@ $('#water').addEventListener('click',e=>{
   else{const g=e.target.closest('[data-g]');if(!g)return;const n=+g.dataset.g;day.water=(day.water===n)?n-1:n}
   saveDay(S.date);renderWater();renderSugs();
 });
+['#sleepNight','#sleepNap'].forEach(id=>$(id).addEventListener('change',()=>{
+  const day=dayOf(S.date);
+  day.sleepNight=Math.max(0,Math.min(16,parseFloat($('#sleepNight').value)||0));
+  day.sleepNap=Math.max(0,Math.min(8,parseFloat($('#sleepNap').value)||0));
+  saveDay(S.date);renderSleep();renderSugs();
+}));
 $('#saveProfile').addEventListener('click',()=>{
   readProfile();S.profile.configured=true;saveProfile();renderPlan();renderAll();
   $('#savedMsg').textContent='Saved ✓';setTimeout(()=>{$('#savedMsg').textContent=''},2500);
