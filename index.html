@@ -310,6 +310,10 @@ label.ck .k{color:var(--muted);font-size:13px;font-weight:400}
       <h2>Water intake</h2>
       <div class="chartwrap" id="repWaterChart"></div>
     </div>
+    <div class="card">
+      <h2>Sleep</h2>
+      <div class="chartwrap" id="repSleepChart"></div>
+    </div>
   </section>
 
   <!-- WEIGHT PROGRESS -->
@@ -1051,12 +1055,12 @@ function renderBestWorst(rows,T){
   el.innerHTML='<div class="hiliterow">'+box(best,'good','Closest to target','🎯')+box(worst,worst.diff>0?'bad':'warn','Furthest from target',worst.diff>0?'📈':'📉')+'</div>';
 }
 function buildReportCSV(rows,T){
-  const header=['Date','Day','Calories','Protein (g)','Carbs (g)','Fat (g)','Water (glasses)','Target','Status'];
+  const header=['Date','Day','Calories','Protein (g)','Carbs (g)','Fat (g)','Water (glasses)','Sleep (hours)','Target','Status'];
   const lines=[header.join(',')];
   rows.forEach(r=>{
     const dow=new Date(r.d+'T12:00:00').toLocaleDateString(undefined,{weekday:'short'});
     const status=!r.logged?'Not logged':r.k>T*1.05?'Over':r.k<T*.85?'Under':'On target';
-    lines.push([r.d,dow,R(r.k),R(r.p),R(r.c),R(r.f),r.water,T,status].join(','));
+    lines.push([r.d,dow,R(r.k),R(r.p),R(r.c),R(r.f),r.water,r.sleep?r.sleep.toFixed(1):0,T,status].join(','));
   });
   return lines.join('\n');
 }
@@ -1086,13 +1090,15 @@ $('#exportCsv').addEventListener('click',exportReportCSV);
 function renderWeek(){
   document.querySelectorAll('#repRange .chip').forEach(b=>b.classList.toggle('on',+b.dataset.r===repRange));
   const days=daysInRange(repRange),T=target();
-  const rows=days.map(d=>{const t=totals(d);return{d,k:t.k,p:t.p,c:t.c,f:t.f,water:(S.days[d]&&S.days[d].water)||0,logged:t.k>0}});
+  const rows=days.map(d=>{const t=totals(d),dd=S.days[d]||{};return{d,k:t.k,p:t.p,c:t.c,f:t.f,water:dd.water||0,sleep:(dd.sleepNight||0)+(dd.sleepNap||0),logged:t.k>0}});
   lastRepRows=rows;lastRepTarget=T;
   const logged=rows.filter(x=>x.logged);
   const avgK=logged.length?R(logged.reduce((a,x)=>a+x.k,0)/logged.length):0;
   const avgP=logged.length?R(logged.reduce((a,x)=>a+x.p,0)/logged.length):0;
   const onTarget=logged.filter(x=>x.k<=T*1.05&&x.k>=T*.85).length;
   const over=logged.filter(x=>x.k>T*1.05).length;
+  const sleepLogged=rows.filter(x=>x.sleep>0);
+  const avgSleep=sleepLogged.length?sleepLogged.reduce((a,x)=>a+x.sleep,0)/sleepLogged.length:0;
   const wAll=wSorted();
   let wChange='–';
   if(wAll.length){
@@ -1106,6 +1112,7 @@ function renderWeek(){
     st(avgP||'–','avg protein g/day')+
     st(onTarget,'days on target')+
     st(over,'days over target')+
+    st(avgSleep?avgSleep.toFixed(1).replace(/\.0$/,'')+' h':'–','avg sleep/day')+
     st(wChange,'weight change');
   renderBestWorst(rows,T);
   renderCalChart(rows,T);
@@ -1128,6 +1135,10 @@ function renderWeek(){
   if(rows.length<=14){waterItems=rows.map(r=>({label:shortDate(r.d),value:r.water}))}
   else{waterItems=[];for(let i=0;i<rows.length;i+=7){const chunk=rows.slice(i,i+7);waterItems.push({label:'Wk '+(Math.floor(i/7)+1),value:chunk.reduce((a,x)=>a+x.water,0)/chunk.length})}}
   $('#repWaterChart').innerHTML=svgBarChart(waterItems,{target:8,targetLabel:'Goal',ariaLabel:'Water intake over time'});
+  let sleepItems;
+  if(rows.length<=14){sleepItems=rows.map(r=>({label:shortDate(r.d),value:r.sleep,color:!r.sleep?'var(--track)':r.sleep<6.5?'var(--warn)':'var(--accent)'}))}
+  else{sleepItems=[];for(let i=0;i<rows.length;i+=7){const chunk=rows.slice(i,i+7);const lg=chunk.filter(x=>x.sleep>0);sleepItems.push({label:'Wk '+(Math.floor(i/7)+1),value:lg.length?lg.reduce((a,x)=>a+x.sleep,0)/lg.length:0})}}
+  $('#repSleepChart').innerHTML=sleepLogged.length?svgBarChart(sleepItems,{target:8,targetLabel:'Recommended',ariaLabel:'Sleep hours over time'}):'<div class="empty">Log your sleep on the Today tab to see it here.</div>';
 }
 $('#repRange').addEventListener('click',e=>{const b=e.target.closest('[data-r]');if(!b)return;repRange=+b.dataset.r;renderWeek()});
 
