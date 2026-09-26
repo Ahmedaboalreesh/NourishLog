@@ -121,8 +121,22 @@ label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bot
 .foot{font-size:12px;color:var(--muted);text-align:center;margin-top:20px}
 .chip.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 .chip.on small{color:inherit;opacity:.85}
-.mealpanel{background:var(--accent-soft);border-radius:12px;padding:12px;margin-top:4px}
-.mealpanel .r{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px}
+.mealgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:10px;margin:10px 0 4px}
+.mealcard{position:relative;text-align:left;border:1px solid var(--line);background:linear-gradient(155deg,var(--card),var(--bg));border-radius:16px;padding:13px 14px;cursor:pointer;transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease;font:inherit;color:inherit}
+.mealcard:hover{transform:translateY(-3px);box-shadow:0 10px 24px -10px rgba(0,0,0,.25);border-color:var(--accent)}
+.mealcard.on{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft) inset,0 10px 24px -10px rgba(0,0,0,.25)}
+.mealcard .mc-top{display:flex;align-items:center;justify-content:space-between;gap:6px}
+.mealcard .mc-emoji{font-size:18px;line-height:1;width:32px;height:32px;border-radius:10px;background:var(--accent-soft);display:flex;align-items:center;justify-content:center;flex:none}
+.mealcard .mc-kcal{font-family:var(--fd);font-weight:700;font-size:15px}
+.mealcard .mc-name{display:block;font-weight:600;font-size:13.5px;margin-top:9px;line-height:1.25}
+.mealcard .mc-items{font-size:11.5px;color:var(--muted);margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mealcard .macrobar{display:flex;height:5px;border-radius:99px;overflow:hidden;margin-top:9px;background:var(--track)}
+.mealcard .macrobar i{display:block;height:100%}
+.mealpanel{background:linear-gradient(155deg,var(--accent-soft),var(--card));border:1px solid var(--accent);border-radius:16px;padding:14px;margin-top:4px}
+.mealpanel .mp-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.mealpanel .mp-head b{font-family:var(--fd);font-size:16px}
+.mealpanel .mp-close{border:0;background:transparent;color:var(--muted);font-size:16px;cursor:pointer;padding:2px 4px;line-height:1;flex:none}
+.mealpanel .r{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px}
 .mealpanel select,.mealpanel input{width:auto}
 .savebtn{border:1px solid var(--line);background:transparent;color:var(--accent);border-radius:8px;font:600 11px var(--fs);padding:3px 8px;cursor:pointer;text-transform:none;letter-spacing:0;margin-left:8px}
 .overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);display:flex;align-items:flex-end;justify-content:center;z-index:50;padding:12px;padding-top:calc(12px + env(safe-area-inset-top,0px));padding-bottom:calc(12px + env(safe-area-inset-bottom,0px))}
@@ -287,6 +301,10 @@ label.ck .k{color:var(--muted);font-size:13px;font-weight:400}
       </div>
     </div>
     <div class="card">
+      <h2>Body composition</h2>
+      <div class="wk" id="repBodyStats"></div>
+    </div>
+    <div class="card">
       <h2>Best & worst day</h2>
       <div id="repBestWorst"></div>
     </div>
@@ -325,8 +343,12 @@ label.ck .k{color:var(--muted);font-size:13px;font-weight:400}
         <div><label for="wVal">Weight (kg)</label><input id="wVal" type="number" inputmode="decimal" step="0.1" min="20" max="400" placeholder="e.g. 78.4"></div>
         <div><label for="wGoal">Goal weight (kg)</label><input id="wGoal" type="number" inputmode="decimal" step="0.1" min="20" max="400" placeholder="optional"></div>
       </div>
+      <div class="grid g2" style="margin-top:10px">
+        <div><label for="wBF">Body fat %</label><input id="wBF" type="number" inputmode="decimal" step="0.1" min="3" max="70" placeholder="optional"></div>
+        <div><label for="wMM">Muscle %</label><input id="wMM" type="number" inputmode="decimal" step="0.1" min="10" max="70" placeholder="optional"></div>
+      </div>
       <div class="row" style="margin-top:10px"><button class="btn" id="wSave">Save weight</button><span class="muted small" id="wMsg"></span></div>
-      <div class="hint">Weigh in at a similar time (e.g. mornings). The trend line averages the last 7 days to smooth out water-weight noise. Your latest weight also updates your calorie target.</div>
+      <div class="hint">Weigh in at a similar time (e.g. mornings). Body fat % and muscle % are optional — enter them if your scale measures them. The trend line averages the last 7 days to smooth out water-weight noise. Your latest weight also updates your calorie target.</div>
     </div>
     <div class="card">
       <div class="row between"><h2 style="margin:0">Trend</h2>
@@ -334,6 +356,11 @@ label.ck .k{color:var(--muted);font-size:13px;font-weight:400}
       <div class="chartwrap" id="wChart" style="margin-top:10px"></div>
       <div class="wk" id="wStats"></div>
       <div id="wInsight" style="margin-top:12px"></div>
+    </div>
+    <div class="card" id="bcCard" hidden>
+      <h2>Body composition</h2>
+      <div class="chartwrap" id="bcChart"></div>
+      <div class="muted small" style="margin-top:6px"><span style="color:var(--accent)">●</span> Body fat % &nbsp; <span style="color:var(--tip)">●</span> Muscle %</div>
     </div>
     <div class="card"><h2>History</h2><div id="wList"></div></div>
   </section>
@@ -938,6 +965,10 @@ function buildSuggestions(){
   const wi=weightInsight();
   if(wi)add(wi.tone==='bad'?2:wi.tone==='warn'?3:5,wi.tone,wi.em,wi.title,wi.body);
   else add(6,'tip','⚖️','Track your weight','Log a weigh-in in the Weight tab. Seeing your trend next to your calories shows whether your target is actually working.');
+  const bmiI=bmiInsight();
+  if(bmiI)add(3,bmiI.tone,bmiI.em,bmiI.title,bmiI.body);
+  const bcI=bodyCompInsight();
+  if(bcI)add(3,bcI.tone,bcI.em,bcI.title,bcI.body);
 
   const w=weekSummary();
   if(w.logged>=3){
@@ -1054,13 +1085,17 @@ function renderBestWorst(rows,T){
   const box=(r,tone,label,em)=>'<div class="hilite '+tone+'"><div class="lbl">'+em+' '+label+'</div><div class="dt">'+shortDate(r.d)+'</div><div class="kc">'+R(r.k)+' kcal · '+(r.diff>=0?'+':'')+R(r.diff)+' vs target</div><div class="kc muted">P '+R(r.p)+' · C '+R(r.c)+' · F '+R(r.f)+'</div></div>';
   el.innerHTML='<div class="hiliterow">'+box(best,'good','Closest to target','🎯')+box(worst,worst.diff>0?'bad':'warn','Furthest from target',worst.diff>0?'📈':'📉')+'</div>';
 }
+function wEntryFor(d){const v=S.weights[d];if(v==null)return null;return typeof v==='number'?{w:v,bf:null,mm:null}:v}
 function buildReportCSV(rows,T){
-  const header=['Date','Day','Calories','Protein (g)','Carbs (g)','Fat (g)','Water (glasses)','Sleep (hours)','Target','Status'];
+  const header=['Date','Day','Calories','Protein (g)','Carbs (g)','Fat (g)','Water (glasses)','Sleep (hours)','Weight (kg)','BMI','Body fat %','Muscle %','Target','Status'];
   const lines=[header.join(',')];
   rows.forEach(r=>{
     const dow=new Date(r.d+'T12:00:00').toLocaleDateString(undefined,{weekday:'short'});
     const status=!r.logged?'Not logged':r.k>T*1.05?'Over':r.k<T*.85?'Under':'On target';
-    lines.push([r.d,dow,R(r.k),R(r.p),R(r.c),R(r.f),r.water,r.sleep?r.sleep.toFixed(1):0,T,status].join(','));
+    const we=wEntryFor(r.d),bmi=we?computeBMI(we.w):null;
+    lines.push([r.d,dow,R(r.k),R(r.p),R(r.c),R(r.f),r.water,r.sleep?r.sleep.toFixed(1):0,
+      we?we.w:'',bmi!=null?bmi.toFixed(1):'',we&&we.bf!=null?we.bf:'',we&&we.mm!=null?we.mm:'',
+      T,status].join(','));
   });
   return lines.join('\n');
 }
@@ -1114,6 +1149,17 @@ function renderWeek(){
     st(over,'days over target')+
     st(avgSleep?avgSleep.toFixed(1).replace(/\.0$/,'')+' h':'–','avg sleep/day')+
     st(wChange,'weight change');
+  const wInRange=wAll.filter(x=>x.d>=days[0]);
+  const bmiNow=wAll.length?computeBMI(wAll[wAll.length-1].w):null,bmiCatNow=bmiCategory(bmiNow);
+  const bfRange=wInRange.filter(x=>x.bf!=null),mmRange=wInRange.filter(x=>x.mm!=null);
+  const bfChange=bfRange.length>=2?sgn(bfRange[bfRange.length-1].bf-bfRange[0].bf)+' pts':'–';
+  const mmChange=mmRange.length>=2?sgn(mmRange[mmRange.length-1].mm-mmRange[0].mm)+' pts':'–';
+  $('#repBodyStats').innerHTML=
+    st(bmiNow!=null?bmiNow.toFixed(1):'–',bmiCatNow?'BMI · '+bmiCatNow.label:'BMI (set height)')+
+    st(bfRange.length?bfRange[bfRange.length-1].bf+'%':'–','latest body fat %')+
+    st(bfChange,'body fat change')+
+    st(mmRange.length?mmRange[mmRange.length-1].mm+'%':'–','latest muscle %')+
+    st(mmChange,'muscle change');
   renderBestWorst(rows,T);
   renderCalChart(rows,T);
   renderMacroDonut(rows);
@@ -1209,18 +1255,24 @@ async function askAI(){
 /* ---------- saved meals ---------- */
 let selMeal=null,delArm=null,dlgPre=null;
 const MEAL_OPTS=[['breakfast','Breakfast'],['lunch','Lunch'],['dinner','Dinner'],['snack','Snack']];
+const MEAL_EMOJI={breakfast:'🌅',lunch:'🍽️',dinner:'🌙',snack:'🍎'};
 function renderMeals(){
   $('#mealChips').innerHTML=S.meals.length
-    ?S.meals.map(m=>'<button class="chip'+(m.id===selMeal?' on':'')+'" data-m="'+esc(m.id)+'">'+esc(m.name)+' <small>'+R(m.k)+'</small></button>').join('')
-    :'<span class="muted small">None yet — log a meal, then tap “Save as meal” on it in your food log.</span>';
+    ?'<div class="mealgrid">'+S.meals.map(m=>{
+      const kcalP=(m.p||0)*4,kcalC=(m.c||0)*4,kcalF=(m.f||0)*9,sum=kcalP+kcalC+kcalF||1;
+      const bar='<div class="macrobar"><i style="width:'+(kcalP/sum*100)+'%;background:var(--accent)"></i><i style="width:'+(kcalC/sum*100)+'%;background:var(--tip)"></i><i style="width:'+(kcalF/sum*100)+'%;background:var(--warn)"></i></div>';
+      const emoji=MEAL_EMOJI[m.meal]||'🍴';
+      return '<button class="mealcard'+(m.id===selMeal?' on':'')+'" data-m="'+esc(m.id)+'"><div class="mc-top"><span class="mc-emoji">'+emoji+'</span><span class="mc-kcal">'+R(m.k)+'</span></div><span class="mc-name">'+esc(m.name)+'</span><div class="mc-items">'+esc(m.items.map(i=>i.n).join(', '))+'</div>'+bar+'</button>';
+    }).join('')+'</div>'
+    :'<div class="empty">None yet — log a meal, then tap "Save as meal" on it in your food log.</div>';
   renderMealPanel();
 }
 function renderMealPanel(){
   const m=S.meals.find(x=>x.id===selMeal),box=$('#mealPanel');
   if(!m){selMeal=null;box.innerHTML='';return}
-  box.innerHTML='<div class="mealpanel"><b>'+esc(m.name)+'</b>'+
-    '<div class="small muted">'+esc(m.items.map(i=>i.n).join(', '))+'</div>'+
-    '<div class="small muted">'+R(m.k)+' kcal · P '+R(m.p)+' · C '+R(m.c)+' · F '+R(m.f)+'</div>'+
+  const emoji=MEAL_EMOJI[m.meal]||'🍴';
+  box.innerHTML='<div class="mealpanel"><div class="mp-head"><div><b>'+emoji+' '+esc(m.name)+'</b><div class="small muted" style="margin-top:2px">'+esc(m.items.map(i=>i.n).join(', '))+'</div></div><button class="mp-close" id="mpClose" aria-label="Close">✕</button></div>'+
+    '<div class="small muted" style="margin-top:8px">'+R(m.k)+' kcal · P '+R(m.p)+' · C '+R(m.c)+' · F '+R(m.f)+'</div>'+
     '<div class="r"><select id="mpMeal" aria-label="Meal">'+MEAL_OPTS.map(o=>'<option value="'+o[0]+'"'+(o[0]===m.meal?' selected':'')+'>'+o[1]+'</option>').join('')+'</select>'+
     '<input id="mpServ" type="number" inputmode="decimal" step="0.25" min="0.25" value="1" style="width:80px" aria-label="Servings">'+
     '<button class="btn" id="mpAdd">Add to '+(S.date===todayStr()?'today':'this day')+'</button><button class="btn ghost" id="mpDel">Delete</button></div></div>';
@@ -1270,7 +1322,22 @@ const fmtKg=v=>v.toFixed(1);
 const sgn=v=>(v>0?'+':'')+v.toFixed(1);
 const daysBetween=(a,b)=>Math.round((new Date(b+'T12:00:00')-new Date(a+'T12:00:00'))/86400000);
 const shortDate=d=>new Date(d+'T12:00:00').toLocaleDateString(undefined,{day:'numeric',month:'short'});
-const wSorted=()=>Object.keys(S.weights).sort().map(d=>({d:d,w:S.weights[d]}));
+const wSorted=()=>Object.keys(S.weights).sort().map(d=>{
+  const v=S.weights[d];
+  return typeof v==='number'?{d,w:v,bf:null,mm:null}:{d,w:v.w,bf:(v.bf!=null?v.bf:null),mm:(v.mm!=null?v.mm:null)};
+});
+function computeBMI(w){
+  const h=(S.profile.height||0)/100;
+  if(!h||!w)return null;
+  return w/(h*h);
+}
+function bmiCategory(b){
+  if(b==null)return null;
+  if(b<18.5)return{label:'Underweight',tone:'warn'};
+  if(b<25)return{label:'Normal',tone:'good'};
+  if(b<30)return{label:'Overweight',tone:'warn'};
+  return{label:'Obese',tone:'bad'};
+}
 function trendSeries(arr){
   return arr.map(p=>{
     const win=arr.filter(q=>{const dd=daysBetween(q.d,p.d);return dd>=0&&dd<7});
@@ -1324,6 +1391,25 @@ function weightInsight(){
   if(Math.abs(pct)<=0.3)return{tone:'good',em:'⚖️',title:'Weight is stable',body:'Your weight is holding steady, which is exactly the goal when maintaining.'};
   return{tone:'warn',em:pct>0?'📈':'📉',title:'Weight is drifting '+(pct>0?'up':'down'),body:'Trend is '+sgn(s.rate)+' kg a week. Nudge your calories '+(pct>0?'down':'up')+' by about 100–150 kcal a day.'};
 }
+function bmiInsight(){
+  const s=weightStats();if(!s)return null;
+  const bmi=computeBMI(s.last.w);if(bmi==null)return null;
+  const cat=bmiCategory(bmi),goal=S.profile.goal;
+  if(cat.label==='Obese'&&goal!=='lose')return{tone:'warn',em:'📊',title:'BMI: '+bmi.toFixed(1)+' — obese range',body:"Your BMI falls in the obese range. If weight loss isn't your current goal, it may be worth a check-in with a doctor — BMI alone doesn't capture muscle, but combined with body fat % it's a useful signal."};
+  if(cat.label==='Underweight'&&goal==='lose')return{tone:'warn',em:'📊',title:'BMI: '+bmi.toFixed(1)+' — underweight range',body:'Your BMI is already in the underweight range. Continuing to cut calories may not be advisable — consider talking to a doctor or dietitian first.'};
+  return null;
+}
+function bodyCompInsight(){
+  const arr=wSorted().filter(x=>x.mm!=null);
+  if(arr.length<2)return null;
+  const first=arr[0],last=arr[arr.length-1];
+  if(daysBetween(first.d,last.d)<10)return null;
+  const mmChange=last.mm-first.mm,s=weightStats(),losing=s&&s.rate!=null&&s.rate<-0.05;
+  if(!losing)return null;
+  if(mmChange>=-0.5)return{tone:'good',em:'💪',title:'Good body recomposition',body:'You are losing weight while your muscle % has held steady or improved ('+sgn(mmChange)+' pts) — a sign you are losing fat rather than muscle. Keep up the protein and strength training.'};
+  if(mmChange<-1.5)return{tone:'warn',em:'⚠️',title:'Muscle % is dropping with weight loss',body:'Your muscle % has fallen by '+Math.abs(mmChange).toFixed(1)+' points while losing weight. A smaller deficit, more protein, and resistance training can help protect muscle.'};
+  return null;
+}
 function renderWeightChart(){
   const el=$('#wChart'),all=wSorted();
   if(!all.length){el.innerHTML='<div class="empty">No weigh-ins yet. Log your first one above.</div>';return}
@@ -1351,13 +1437,44 @@ function renderWeightChart(){
   svg+='</svg><div class="muted small" style="margin-top:4px"><span style="color:var(--accent)">●</span> 7-day trend &nbsp; <span>●</span> daily weigh-in</div>';
   el.innerHTML=svg;
 }
+function renderBodyCompChart(){
+  const all=wSorted().filter(x=>x.bf!=null||x.mm!=null);
+  $('#bcCard').hidden=!all.length;
+  if(!all.length)return;
+  const arr=wRange?all.filter(x=>daysBetween(x.d,todayStr())<=wRange):all;
+  const el=$('#bcChart');
+  if(!arr.length){el.innerHTML='<div class="empty">No body-composition entries in this range.</div>';return}
+  const W=640,H=220,pl=40,pr=16,pt=16,pb=28;
+  const d0=arr[0].d,d1=arr[arr.length-1].d,span=Math.max(daysBetween(d0,d1),1);
+  const vals=arr.flatMap(x=>[x.bf,x.mm]).filter(v=>v!=null);
+  let mn=Math.min(...vals),mx=Math.max(...vals);const pad=Math.max((mx-mn)*.2,2);mn=Math.max(0,mn-pad);mx+=pad;
+  const X=d=>arr.length===1?W/2:pl+daysBetween(d0,d)/span*(W-pl-pr);
+  const Y=v=>pt+(mx-v)/(mx-mn)*(H-pt-pb);
+  let svg='<svg viewBox="0 0 '+W+' '+H+'" width="100%" style="min-width:420px" role="img" aria-label="Body fat and muscle percentage over time">';
+  for(let i=0;i<=2;i++){const v=mn+(mx-mn)*i/2,y=Y(v);svg+='<line x1="'+pl+'" x2="'+(W-pr)+'" y1="'+y+'" y2="'+y+'" stroke="var(--line)"/><text x="'+(pl-6)+'" y="'+(y+4)+'" text-anchor="end" font-size="11" fill="var(--muted)">'+v.toFixed(0)+'%</text>'}
+  const line=(key,color)=>{
+    const pts=arr.filter(x=>x[key]!=null);
+    if(pts.length>1)svg+='<polyline fill="none" stroke="'+color+'" stroke-width="2.5" stroke-linejoin="round" points="'+pts.map(x=>X(x.d).toFixed(1)+','+Y(x[key]).toFixed(1)).join(' ')+'"/>';
+    pts.forEach(x=>{svg+='<circle cx="'+X(x.d).toFixed(1)+'" cy="'+Y(x[key]).toFixed(1)+'" r="3.5" fill="'+color+'"/>'});
+  };
+  line('bf','var(--accent)');line('mm','var(--tip)');
+  svg+='<text x="'+pl+'" y="'+(H-6)+'" font-size="11" fill="var(--muted)">'+shortDate(d0)+'</text>';
+  if(arr.length>1)svg+='<text x="'+(W-pr)+'" y="'+(H-6)+'" text-anchor="end" font-size="11" fill="var(--muted)">'+shortDate(d1)+'</text>';
+  svg+='</svg>';
+  el.innerHTML=svg;
+}
 function renderProgress(){
   if(!$('#wDate').value)$('#wDate').value=todayStr();
   $('#wDate').max=todayStr();
-  if(document.activeElement!==$('#wVal')){const c=S.weights[$('#wDate').value];$('#wVal').value=c!=null?c:''}
+  const entry=S.weights[$('#wDate').value];
+  const norm=entry==null?null:(typeof entry==='number'?{w:entry,bf:null,mm:null}:entry);
+  if(document.activeElement!==$('#wVal'))$('#wVal').value=norm?norm.w:'';
+  if(document.activeElement!==$('#wBF'))$('#wBF').value=(norm&&norm.bf!=null)?norm.bf:'';
+  if(document.activeElement!==$('#wMM'))$('#wMM').value=(norm&&norm.mm!=null)?norm.mm:'';
   if(document.activeElement!==$('#wGoal'))$('#wGoal').value=S.profile.goalWeight||'';
   document.querySelectorAll('#wRange .chip').forEach(b=>b.classList.toggle('on',+b.dataset.r===wRange));
   renderWeightChart();
+  renderBodyCompChart();
   const s=weightStats();
   if(!s){
     $('#wStats').innerHTML='';
@@ -1370,6 +1487,8 @@ function renderProgress(){
     const diff=s.last.w-s.goal,g=S.profile.goal;
     toGoal=(g==='lose'&&diff<=0)||(g==='gain'&&diff>=0)||Math.abs(diff)<0.1?'Reached 🎉':fmtKg(Math.abs(diff))+' kg to go';
   }
+  const bmi=computeBMI(s.last.w),bmiCat=bmiCategory(bmi);
+  const lastBF=[...s.arr].reverse().find(x=>x.bf!=null),lastMM=[...s.arr].reverse().find(x=>x.mm!=null);
   const st=(v,l)=>'<div><b>'+v+'</b><span class="muted small">'+l+'</span></div>';
   $('#wStats').innerHTML=
     st(fmtKg(s.last.w)+' kg','current')+
@@ -1377,15 +1496,21 @@ function renderProgress(){
     st(s.ch7==null?'–':sgn(s.ch7)+' kg','last 7 days')+
     st(s.rate==null?'–':sgn(s.rate)+' kg','weekly rate')+
     st(toGoal,s.goal?'to goal '+s.goal+' kg':'set a goal weight')+
-    st(eta?shortDate(eta):'–','estimated goal date');
+    st(eta?shortDate(eta):'–','estimated goal date')+
+    st(bmi!=null?bmi.toFixed(1):'–',bmiCat?'BMI · '+bmiCat.label:'BMI (set height in Profile)')+
+    st(lastBF?lastBF.bf+'%':'–','body fat %')+
+    st(lastMM?lastMM.mm+'%':'–','muscle %');
   const wi=weightInsight();
-  $('#wInsight').innerHTML=wi?'<div class="sug '+wi.tone+'"><div class="em">'+wi.em+'</div><div><b>'+esc(wi.title)+'</b><p>'+esc(wi.body)+'</p></div></div>':'';
+  const extraBoxes=[bmiInsight(),bodyCompInsight()].filter(Boolean);
+  $('#wInsight').innerHTML=(wi?'<div class="sug '+wi.tone+'"><div class="em">'+wi.em+'</div><div><b>'+esc(wi.title)+'</b><p>'+esc(wi.body)+'</p></div></div>':'')+
+    extraBoxes.map(b=>'<div class="sug '+b.tone+'"><div class="em">'+b.em+'</div><div><b>'+esc(b.title)+'</b><p>'+esc(b.body)+'</p></div></div>').join('');
   const rows=s.arr.slice(-12).reverse();
   $('#wList').innerHTML=rows.map(x=>{
     const idx=s.arr.findIndex(y=>y.d===x.d),prev=idx>0?s.arr[idx-1]:null;
     const dv=prev?x.w-prev.w:null;
     const cls=dv==null?'':dv>0?'up':dv<0?'down':'';
-    return '<div class="item"><div><div class="nm">'+fmtKg(x.w)+' kg</div><div class="mc">'+new Date(x.d+'T12:00:00').toLocaleDateString(undefined,{weekday:'short',day:'numeric',month:'short',year:'numeric'})+(dv!=null?' · <span class="'+cls+'">'+sgn(dv)+' kg</span>':'')+'</div></div><button data-wdel="'+esc(x.d)+'" aria-label="Delete entry">✕</button></div>';
+    const extra=(x.bf!=null?' · '+x.bf+'% fat':'')+(x.mm!=null?' · '+x.mm+'% muscle':'');
+    return '<div class="item"><div><div class="nm">'+fmtKg(x.w)+' kg</div><div class="mc">'+new Date(x.d+'T12:00:00').toLocaleDateString(undefined,{weekday:'short',day:'numeric',month:'short',year:'numeric'})+(dv!=null?' · <span class="'+cls+'">'+sgn(dv)+' kg</span>':'')+esc(extra)+'</div></div><button data-wdel="'+esc(x.d)+'" aria-label="Delete entry">✕</button></div>';
   }).join('');
 }
 function syncProfileWeight(){
@@ -1396,7 +1521,12 @@ function saveWeightEntry(){
   const d=$('#wDate').value||todayStr(),w=parseFloat($('#wVal').value),msg=$('#wMsg');
   if(!(w>=20&&w<=400)){msg.textContent='Enter a weight between 20 and 400 kg.';return}
   if(d>todayStr()){msg.textContent="The date can't be in the future.";return}
-  S.weights[d]=Math.round(w*10)/10;
+  const bfv=parseFloat($('#wBF').value),mmv=parseFloat($('#wMM').value);
+  S.weights[d]={
+    w:Math.round(w*10)/10,
+    bf:(!isNaN(bfv)&&bfv>0&&bfv<80)?Math.round(bfv*10)/10:null,
+    mm:(!isNaN(mmv)&&mmv>0&&mmv<80)?Math.round(mmv*10)/10:null
+  };
   const g=parseFloat($('#wGoal').value);S.profile.goalWeight=isNaN(g)||g<=0?null:g;
   saveWeights();syncProfileWeight();saveProfile();
   msg.textContent='Saved ✓';setTimeout(()=>{msg.textContent=''},2500);
@@ -1491,6 +1621,7 @@ $('#mealChips').addEventListener('click',e=>{
 });
 $('#mealPanel').addEventListener('click',e=>{
   if(e.target.closest('#mpAdd'))addSavedMeal();
+  else if(e.target.closest('#mpClose')){selMeal=null;delArm=null;renderMeals()}
   else if(e.target.closest('#mpDel')){
     const btn=$('#mpDel');
     if(delArm===selMeal){
@@ -1508,7 +1639,7 @@ $('#dName').addEventListener('keydown',e=>{if(e.key==='Enter')saveMealFromDialog
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('#dlg').hidden)closeDialog()});
 $('#wSave').addEventListener('click',saveWeightEntry);
 $('#wVal').addEventListener('keydown',e=>{if(e.key==='Enter')saveWeightEntry()});
-$('#wDate').addEventListener('change',()=>{const c=S.weights[$('#wDate').value];$('#wVal').value=c!=null?c:''});
+$('#wDate').addEventListener('change',renderProgress);
 $('#wGoal').addEventListener('change',()=>{
   const g=parseFloat($('#wGoal').value);S.profile.goalWeight=isNaN(g)||g<=0?null:g;saveProfile();renderProgress();
 });
