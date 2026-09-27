@@ -143,6 +143,24 @@ label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bot
 .mealpanel .mp-close{border:0;background:transparent;color:var(--muted);font-size:16px;cursor:pointer;padding:2px 4px;line-height:1;flex:none}
 .mealpanel .r{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px}
 .mealpanel select,.mealpanel input{width:auto}
+.catrow-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;margin:8px -2px 12px;padding:2px}
+.catrow-wrap::-webkit-scrollbar{display:none}
+#catRow{display:flex;gap:8px;flex-wrap:nowrap}
+.catchip{flex:none;display:flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:99px;padding:7px 14px 7px 11px;font:600 12.5px var(--fs);cursor:pointer;white-space:nowrap;transition:background .15s ease,color .15s ease,border-color .15s ease,box-shadow .15s ease}
+.catchip .ci{font-size:14px;line-height:1}
+.catchip:hover{border-color:var(--accent)}
+.catchip.on{background:linear-gradient(135deg,var(--accent),var(--tip));color:var(--accent-ink);border-color:transparent;box-shadow:0 4px 14px -6px var(--accent)}
+#chips{display:block}
+.foodgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:8px;margin:8px 0 4px}
+.foodcard{text-align:left;border:1px solid var(--line);background:linear-gradient(155deg,var(--card),var(--bg));border-radius:14px;padding:10px;cursor:pointer;transition:transform .15s ease,box-shadow .15s ease,border-color .15s ease;font:inherit;color:inherit;min-width:0}
+.foodcard:hover{transform:translateY(-2px);box-shadow:0 8px 18px -8px rgba(0,0,0,.22);border-color:var(--accent)}
+.foodcard:active{transform:translateY(0)}
+.foodcard .fc-top{display:flex;align-items:center;justify-content:space-between;gap:4px}
+.foodcard .fc-emoji{font-size:14px;width:24px;height:24px;border-radius:7px;background:var(--accent-soft);display:flex;align-items:center;justify-content:center;flex:none}
+.foodcard .fc-kcal{font-family:var(--fd);font-weight:700;font-size:12.5px;color:var(--accent)}
+.foodcard .fc-name{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:11.5px;font-weight:600;margin-top:6px;line-height:1.25}
+.foodcard .macrobar{display:flex;height:4px;border-radius:99px;overflow:hidden;margin-top:7px;background:var(--track)}
+.foodcard .macrobar i{display:block;height:100%}
 .savebtn{border:1px solid var(--line);background:transparent;color:var(--accent);border-radius:8px;font:600 11px var(--fs);padding:3px 8px;cursor:pointer;text-transform:none;letter-spacing:0;margin-left:8px}
 .overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);display:flex;align-items:flex-end;justify-content:center;z-index:50;padding:12px;padding-top:calc(12px + env(safe-area-inset-top,0px));padding-bottom:calc(12px + env(safe-area-inset-bottom,0px))}
 @media (min-width:600px){.overlay{align-items:center}}
@@ -227,7 +245,7 @@ label.ck .k{color:var(--muted);font-size:13px;font-weight:400}
     <div class="card">
       <h2>Add food</h2>
       <input id="foodSearch" placeholder="Search 150+ foods — Saudi & Gulf dishes, fast food, sweets, drinks…" autocomplete="off">
-      <div class="chips" id="catRow" style="margin-top:8px"></div>
+      <div class="catrow-wrap" id="catRow" style="margin-top:8px"></div>
       <div class="chips" id="chips"></div>
       <div class="grid g2">
         <div><label for="fName">Food</label><input id="fName" placeholder="e.g. Chicken kabsa"></div>
@@ -854,13 +872,14 @@ function renderSleep(){
   $('#sleepTotalTxt').textContent=total?total.toFixed(1).replace(/\.0$/,'')+' h total':'Not logged yet';
 }
 let foodCat='all';
+const CAT_ICON={all:'🍽️',trad:'🕌',protein:'🍗',veg:'🥦',fruit:'🍎',grain:'🌾',dairy:'🥛',cond:'🧂',global:'🌍',fastfood:'🍔',sweet:'🍰',drink:'🥤',snack:'🥜',pack:'🏷️',custom:'⭐'};
 function buildCatRow(){
-  $('#catRow').innerHTML=CATS.map(c=>'<button class="chip'+(c[0]===foodCat?' on':'')+'" data-c="'+c[0]+'">'+c[1]+'</button>').join('');
+  $('#catRow').innerHTML=CATS.map(c=>'<button class="catchip'+(c[0]===foodCat?' on':'')+'" data-c="'+c[0]+'"><span class="ci">'+(CAT_ICON[c[0]]||'🍽️')+'</span>'+c[1]+'</button>').join('');
 }
 $('#catRow').addEventListener('click',e=>{
   const b=e.target.closest('[data-c]');if(!b)return;
   foodCat=b.dataset.c;
-  document.querySelectorAll('#catRow .chip').forEach(x=>x.classList.toggle('on',x===b));
+  document.querySelectorAll('#catRow .catchip').forEach(x=>x.classList.toggle('on',x===b));
   renderChips();
 });
 function renderChips(){
@@ -883,7 +902,19 @@ function renderChips(){
     }));
     list=recent.concat(allFoods.filter(f=>!seen.has(f.n.toLowerCase())).slice(0,9));
   }
-  $('#chips').innerHTML=list.length?list.map((f,i)=>'<button class="chip" data-i="'+i+'">'+esc(f.n)+' <small>'+R(f.k)+'</small></button>').join(''):(foodCat==='custom'?'<span class="muted small">Nothing saved yet — foods you add manually will appear here automatically.</span>':'<span class="muted small">No match in this category — try "All" or enter it manually below.</span>');
+  if(!list.length){
+    $('#chips').innerHTML=foodCat==='custom'?'<span class="muted small">Nothing saved yet — foods you add manually will appear here automatically.</span>':'<span class="muted small">No match in this category — try "All" or enter it manually below.</span>';
+    $('#chips')._list=list;return;
+  }
+  $('#chips').innerHTML='<div class="foodgrid">'+list.map((f,i)=>{
+    const icon=f.recent?'🕒':(CAT_ICON[f.cat]||CAT_ICON[foodCat]||'🍴');
+    let bar='';
+    if(f.p||f.c||f.f){
+      const kcalP=(f.p||0)*4,kcalC=(f.c||0)*4,kcalF=(f.f||0)*9,sum=kcalP+kcalC+kcalF||1;
+      bar='<div class="macrobar"><i style="width:'+(kcalP/sum*100)+'%;background:var(--accent)"></i><i style="width:'+(kcalC/sum*100)+'%;background:var(--tip)"></i><i style="width:'+(kcalF/sum*100)+'%;background:var(--warn)"></i></div>';
+    }
+    return '<button class="foodcard" data-i="'+i+'"><div class="fc-top"><span class="fc-emoji">'+icon+'</span><span class="fc-kcal">'+R(f.k)+'</span></div><span class="fc-name">'+esc(f.n)+'</span>'+bar+'</button>';
+  }).join('')+'</div>';
   $('#chips')._list=list;
 }
 function updatePreview(){
@@ -1562,7 +1593,7 @@ $('#prevDay').addEventListener('click',()=>{S.date=addDays(S.date,-1);renderAll(
 $('#nextDay').addEventListener('click',()=>{if(S.date<addDays(todayStr(),1)){S.date=addDays(S.date,1);renderAll()}});
 $('#foodSearch').addEventListener('input',renderChips);
 $('#chips').addEventListener('click',e=>{
-  const b=e.target.closest('.chip');if(!b)return;
+  const b=e.target.closest('.foodcard');if(!b)return;
   const f=$('#chips')._list[+b.dataset.i];if(!f)return;
   $('#fName').value=f.n;$('#fKcal').value=R(f.k);$('#fP').value=f.p?Math.round(f.p*10)/10:'';$('#fC').value=f.c?Math.round(f.c*10)/10:'';$('#fF').value=f.f?Math.round(f.f*10)/10:'';$('#fServ').value=1;
   updatePreview();$('#fServ').focus();
