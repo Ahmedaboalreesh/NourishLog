@@ -639,9 +639,25 @@ const FOODS=[
  ['Kraft Mac & Cheese, prepared (1 cup)',350,10,48,12,'pack'],['Quaker Oats, prepared (1 packet)',100,4,19,2,'pack'],['Pringles, small can (1/3 can)',150,1.5,15,10,'pack'],
  ['Nesquik chocolate milk (1 cup)',210,8,30,7,'pack'],['Laughing Cow cheese wedge (1)',50,2,1,4,'pack'],['Lipton Yellow Label Tea (1 cup)',2,0,.5,0,'pack'],
  ['Dove Chocolate (1 bar)',220,3,24,13,'pack'],['Snickers, King Size',510,9,64,26,'pack'],['Doritos Nacho Cheese, small bag',150,2,16,9,'pack'],['Cheetos, small bag',160,2,15,10,'pack'],
- ['Al Marai Laban Up (1 cup)',130,6,15,5,'pack'],['Rani Float, mango (1 box)',110,0,27,0,'pack']
+ ['Al Marai Laban Up (1 cup)',130,6,15,5,'pack'],['Rani Float, mango (1 box)',110,0,27,0,'pack'],
+ // AirFried: foods prepared in an air fryer
+ ['Air-fried chicken wings (5 pieces)',320,28,1,22,'airfry'],['Air-fried chicken breast (150 g)',240,45,0,5,'airfry'],['Air-fried chicken drumsticks (2)',300,32,0,18,'airfry'],
+ ['Air-fried chicken thighs, bone-in (1)',260,24,0,18,'airfry'],['Air-fried chicken nuggets (6 pieces)',280,16,16,17,'airfry'],['Air-fried chicken tenders (3)',290,26,15,13,'airfry'],
+ ['Air-fried crispy chicken, Southern-style (1 piece)',300,25,12,17,'airfry'],['Air-fried salmon fillet (150 g)',290,38,0,15,'airfry'],['Air-fried shrimp (100 g)',110,22,1,2,'airfry'],
+ ['Air-fried breaded fish fillet (1)',260,18,20,12,'airfry'],['Air-fried fish fingers (4)',220,10,22,10,'airfry'],['Air-fried calamari rings (100 g)',210,14,15,10,'airfry'],
+ ['Air-fried beef steak (150 g)',350,40,0,20,'airfry'],['Air-fried beef burger patty (1)',240,20,0,17,'airfry'],['Air-fried meatballs (5)',300,22,10,19,'airfry'],
+ ['Air-fried kofta (2 pieces)',250,18,4,18,'airfry'],['Air-fried lamb chops (2)',330,30,0,23,'airfry'],['Air-fried chicken sausages (2)',220,14,4,16,'airfry'],
+ ['Air-fried french fries (1 cup)',200,3,30,8,'airfry'],['Air-fried sweet potato fries (1 cup)',180,2,32,5,'airfry'],['Air-fried potato wedges (1 cup)',190,4,32,5,'airfry'],
+ ['Air-fried baby potatoes (1 cup)',170,4,30,4,'airfry'],['Air-fried hash browns (2 patties)',180,2,22,9,'airfry'],['Air-fried onion rings (6)',250,4,28,14,'airfry'],
+ ['Air-fried broccoli (1 cup)',80,4,9,4,'airfry'],['Air-fried cauliflower (1 cup)',90,4,10,5,'airfry'],['Air-fried Brussels sprouts (1 cup)',100,5,12,5,'airfry'],
+ ['Air-fried zucchini fries (1 cup)',150,5,15,8,'airfry'],['Air-fried eggplant slices (1 cup)',110,2,14,6,'airfry'],['Air-fried carrots (1 cup)',90,1,15,3,'airfry'],
+ ['Air-fried mushrooms (1 cup)',70,4,7,3,'airfry'],['Air-fried corn on the cob (1)',120,3,22,3,'airfry'],['Air-fried crispy chickpeas (1/2 cup)',180,8,26,5,'airfry'],
+ ['Air-fried falafel (4 pieces)',200,8,22,9,'airfry'],['Air-fried sambousa (2 pieces)',180,7,20,8,'airfry'],['Air-fried spring rolls (2)',150,4,20,6,'airfry'],
+ ['Air-fried samosa (2)',200,5,26,8,'airfry'],['Air-fried halloumi (3 slices)',240,15,2,19,'airfry'],['Air-fried mozzarella sticks (4)',300,14,20,18,'airfry'],
+ ['Air-fried tofu cubes (100 g)',150,16,4,8,'airfry'],['Air-fried egg (1)',80,6,0.5,6,'airfry'],['Air-fried banana slices (1 banana)',100,1,25,0.4,'airfry'],
+ ['Air-fried apple chips (1 apple)',90,0.5,24,0.3,'airfry'],['Air-fried donut (1)',200,3,28,8,'airfry'],['Air-fried pizza rolls (5)',250,8,28,12,'airfry']
 ].map(a=>({n:a[0],k:a[1],p:a[2],c:a[3],f:a[4],cat:a[5]}));
-const CATS=[['all','All'],['trad','Saudi & Gulf'],['protein','Meat, poultry & seafood'],['veg','Vegetables'],['fruit','Fruit & dates'],['grain','Grains & bread'],['dairy','Dairy & eggs'],['cond','Oils, sauces & spices'],['global','World dishes'],['fastfood','Fast food'],['sweet','Sweets & bakery'],['drink','Drinks'],['snack','Snacks & nuts'],['pack','Packaged & branded'],['custom','My foods']];
+const CATS=[['all','All'],['trad','Saudi & Gulf'],['protein','Meat, poultry & seafood'],['veg','Vegetables'],['fruit','Fruit & dates'],['grain','Grains & bread'],['dairy','Dairy & eggs'],['cond','Oils, sauces & spices'],['global','World dishes'],['fastfood','Fast food'],['sweet','Sweets & bakery'],['drink','Drinks'],['snack','Snacks & nuts'],['pack','Packaged & branded'],['airfry','AirFried'],['custom','My foods']];
 
 const IDEAS=[
  {n:'Oatmeal with milk, banana and a few almonds',k:380,m:'b',t:['veg']},
@@ -872,7 +888,7 @@ function renderSleep(){
   $('#sleepTotalTxt').textContent=total?total.toFixed(1).replace(/\.0$/,'')+' h total':'Not logged yet';
 }
 let foodCat='all';
-const CAT_ICON={all:'🍽️',trad:'🕌',protein:'🍗',veg:'🥦',fruit:'🍎',grain:'🌾',dairy:'🥛',cond:'🧂',global:'🌍',fastfood:'🍔',sweet:'🍰',drink:'🥤',snack:'🥜',pack:'🏷️',custom:'⭐'};
+const CAT_ICON={all:'🍽️',trad:'🕌',protein:'🍗',veg:'🥦',fruit:'🍎',grain:'🌾',dairy:'🥛',cond:'🧂',global:'🌍',fastfood:'🍔',sweet:'🍰',drink:'🥤',snack:'🥜',pack:'🏷️',airfry:'🍟',custom:'⭐'};
 function buildCatRow(){
   $('#catRow').innerHTML=CATS.map(c=>'<button class="catchip'+(c[0]===foodCat?' on':'')+'" data-c="'+c[0]+'"><span class="ci">'+(CAT_ICON[c[0]]||'🍽️')+'</span>'+c[1]+'</button>').join('');
 }
@@ -893,7 +909,7 @@ function renderChips(){
   }else if(foodCat==='custom'){
     list=customArr.length?customArr.slice(0,40):[];
   }else if(foodCat!=='all'){
-    list=pool.slice(0,28);
+    list=pool.slice(0,60);
   }else{
     const seen=new Set(),recent=[];
     Object.keys(S.days).sort().reverse().forEach(d=>((S.days[d]&&S.days[d].entries)||[]).slice().reverse().forEach(x=>{
