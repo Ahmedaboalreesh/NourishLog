@@ -119,6 +119,13 @@ label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bot
 .wk div{background:var(--bg);border-radius:12px;padding:10px;text-align:center}
 .wk b{display:block;font-family:var(--fd);font-size:22px}
 .foot{font-size:12px;color:var(--muted);text-align:center;margin-top:20px}
+.remrow{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+.remrow:last-child{border-bottom:0}
+.remrow .rl{flex:1;font-weight:500;min-width:0}
+.remrow input[type=checkbox]{width:20px;height:20px;accent-color:var(--accent);flex:none}
+.remrow input[type=time],.remrow select{width:auto;flex:none}
+.toast{position:fixed;left:12px;right:12px;top:calc(env(safe-area-inset-top,0px) + 12px);z-index:60;max-width:460px;margin:0 auto;background:var(--card);border:1px solid var(--accent);border-left:5px solid var(--accent);border-radius:14px;padding:12px 14px;box-shadow:0 12px 30px -10px rgba(0,0,0,.35);cursor:pointer}
+.toast b{display:block;font-family:var(--fd);margin-bottom:2px}
 .chip.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 .chip.on small{color:inherit;opacity:.85}
 .mealgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(6px,2vw,10px);margin:10px 0 4px}
@@ -430,6 +437,13 @@ label.ck .k{color:var(--muted);font-size:13px;font-weight:400}
       <div class="hint">These feed the suggestions on the Today tab and the personalised plan.</div>
       <div style="margin-top:12px"><button class="btn" id="saveProfile">Save profile</button> <span class="muted small" id="savedMsg"></span></div>
     </div>
+
+    <div class="card" id="remCard">
+      <div class="row between"><h2 style="margin:0">Reminders</h2><span class="muted small" id="remStatus"></span></div>
+      <div class="hint" style="margin:6px 0 12px">Smart reminders skip themselves when you've already logged that meal, water goal or sleep. They fire while the app is open or installed on your home screen.</div>
+      <div class="row"><button class="btn" id="remEnable">Enable reminders</button><button class="btn ghost" id="remTest">Send test</button></div>
+      <div id="remRows" style="margin-top:8px"></div>
+    </div>
   </section>
 
   <div class="overlay" id="dlg" hidden>
@@ -443,6 +457,8 @@ label.ck .k{color:var(--muted);font-size:13px;font-weight:400}
       <div class="hint" id="dMsg"></div>
     </div>
   </div>
+
+  <div class="toast" id="toast" hidden></div>
 
   <div class="foot">General wellness guidance, not medical advice. Talk to a doctor or dietitian for medical conditions.</div>
 </div>
@@ -1242,6 +1258,7 @@ $('#repRange').addEventListener('click',e=>{const b=e.target.closest('[data-r]')
 
 /* ---------- profile ---------- */
 function fillProfileForm(){
+  renderReminders();
   const p=S.profile;
   $('#pSex').value=p.sex;$('#pAge').value=p.age;$('#pGoal').value=p.goal;$('#pW').value=p.weight;$('#pH').value=p.height;$('#pAct').value=p.activity;
   $('#pTarget').value=p.target||'';
@@ -1764,12 +1781,122 @@ if(fbReady){
   });
 }
 
+/* ---------- reminders (in-app; works while the app is open or installed) ---------- */
+const REM_DEFAULT={
+  breakfast:{on:true,t:'08:00'},lunch:{on:true,t:'13:00'},dinner:{on:true,t:'19:00'},
+  sleep:{on:true,t:'09:00'},summary:{on:true,t:'21:00'},
+  water:{on:true,every:2,start:'09:00',end:'21:00'}
+};
+const REM_ITEMS=[['breakfast','🌅 Log breakfast'],['lunch','🍽️ Log lunch'],['dinner','🌙 Log dinner'],['sleep','😴 Log sleep'],['summary','📊 Daily calorie summary']];
+const REM_ICON='data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🥗</text></svg>');
+const REM_FIRED_KEY='nourishlog:rem-fired';
+function getRem(){
+  const r=S.profile.rem||{},o={on:!!r.on};
+  Object.keys(REM_DEFAULT).forEach(k=>{o[k]=Object.assign({},REM_DEFAULT[k],r[k]||{})});
+  return o;
+}
+function setRem(rem){S.profile.rem=rem;saveProfile()}
+function remPerm(){return('Notification' in window)?Notification.permission:'unsupported'}
+function renderReminders(){
+  const rem=getRem(),perm=remPerm();
+  let st='Off';
+  if(rem.on){
+    st=perm==='granted'?'On · phone notifications allowed'
+      :perm==='denied'?'On · notifications blocked in browser, showing in-app banners only'
+      :perm==='unsupported'?'On · in-app banners only (this browser has no notification support)'
+      :'On · notification permission not granted yet';
+  }
+  $('#remStatus').textContent=st;
+  $('#remEnable').textContent=rem.on?'Turn off reminders':'Enable reminders';
+  const opt=(v,cur)=>'<option value="'+v+'"'+(+cur===v?' selected':'')+'>every '+v+' h</option>';
+  $('#remRows').innerHTML=REM_ITEMS.map(x=>'<div class="remrow"><input type="checkbox" data-rk="'+x[0]+'" data-rf="on"'+(rem[x[0]].on?' checked':'')+' aria-label="'+esc(x[1])+'"><span class="rl">'+x[1]+'</span><input type="time" data-rk="'+x[0]+'" data-rf="t" value="'+esc(rem[x[0]].t)+'"></div>').join('')+
+    '<div class="remrow"><input type="checkbox" data-rk="water" data-rf="on"'+(rem.water.on?' checked':'')+' aria-label="Drink water"><span class="rl">💧 Drink water</span><select data-rk="water" data-rf="every" aria-label="Water reminder interval">'+[1,2,3,4].map(v=>opt(v,rem.water.every)).join('')+'</select></div>'+
+    '<div class="remrow"><span class="rl muted small">Water reminder window</span><input type="time" data-rk="water" data-rf="start" value="'+esc(rem.water.start)+'"><input type="time" data-rk="water" data-rf="end" value="'+esc(rem.water.end)+'"></div>';
+}
+let toastT=null;
+function showToast(title,body){
+  const el=$('#toast');
+  el.innerHTML='<b>'+esc(title)+'</b><span class="small">'+esc(body)+'</span>';
+  el.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>{el.hidden=true},9000);
+}
+async function sysNotify(title,body,tag){
+  if(remPerm()!=='granted')return false;
+  try{
+    const reg=('serviceWorker' in navigator)?await navigator.serviceWorker.getRegistration():null;
+    if(reg&&reg.showNotification){await reg.showNotification(title,{body,tag,icon:REM_ICON,badge:REM_ICON});return true}
+    new Notification(title,{body,tag,icon:REM_ICON});return true;
+  }catch(e){return false}
+}
+async function notify(title,body,tag,force){
+  const visible=typeof document.visibilityState==='undefined'||document.visibilityState==='visible';
+  if(force||!visible){const ok=await sysNotify(title,body,tag);if(ok&&!force)return}
+  if(visible||force)showToast(title,body);
+}
+function hmToMin(s){const m=/^(\d{1,2}):(\d{2})$/.exec(s||'');return m?(+m[1])*60+(+m[2]):null}
+function dueReminders(now){
+  const rem=getRem();if(!rem.on)return[];
+  const nowM=now.getHours()*60+now.getMinutes(),td=todayStr(),day=S.days[td]||{entries:[],water:0};
+  const near=m=>m!=null&&nowM>=m&&nowM-m<=20;
+  const out=[];
+  ['breakfast','lunch','dinner'].forEach(mk=>{
+    const r=rem[mk];
+    if(r.on&&near(hmToMin(r.t))&&!(day.entries||[]).some(e=>e.meal===mk))
+      out.push({key:mk,title:'Time to log '+mk,body:'Nothing logged for '+mk+' yet — add it while it is fresh.'});
+  });
+  if(rem.water.on){
+    const a=hmToMin(rem.water.start),b=hmToMin(rem.water.end),step=Math.max(1,+rem.water.every||2)*60,g=day.water||0;
+    if(a!=null&&b!=null&&g<8){for(let m=a;m<=b;m+=step){if(near(m)){out.push({key:'water@'+m,title:'Drink some water 💧',body:'You have had '+g+' of 8 glasses today.'});break}}}
+  }
+  if(rem.sleep.on&&near(hmToMin(rem.sleep.t))&&!((day.sleepNight||0)+(day.sleepNap||0)))
+    out.push({key:'sleep',title:'Log your sleep 😴',body:'How many hours did you sleep? Add night sleep and any nap.'});
+  if(rem.summary.on&&near(hmToMin(rem.summary.t))){
+    const tot=totals(td),T=target(),left=T-tot.k;
+    out.push({key:'summary',title:'Your day so far',body:R(tot.k)+' of '+T+' kcal eaten · '+(left>=0?R(left)+' left':R(-left)+' over target')+' · protein '+R(tot.p)+' g'});
+  }
+  return out;
+}
+function checkReminders(){
+  if(!FUID)return;
+  let f;
+  try{const o=JSON.parse(localStorage.getItem(REM_FIRED_KEY)||'null');f=(o&&o.d===todayStr())?o:{d:todayStr(),k:{}}}catch(e){f={d:todayStr(),k:{}}}
+  dueReminders(new Date()).forEach(x=>{
+    if(f.k[x.key])return;
+    f.k[x.key]=1;
+    try{localStorage.setItem(REM_FIRED_KEY,JSON.stringify(f))}catch(e){}
+    notify(x.title,x.body,x.key);
+  });
+}
+function startReminders(){
+  setInterval(checkReminders,30000);
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')checkReminders()});
+  if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol))navigator.serviceWorker.register('sw.js').catch(()=>{});
+}
+$('#toast').addEventListener('click',()=>{$('#toast').hidden=true});
+$('#remRows').addEventListener('change',e=>{
+  const t=e.target,k=t.dataset&&t.dataset.rk,f=t.dataset&&t.dataset.rf;if(!k||!f)return;
+  const rem=getRem();
+  if(f==='on')rem[k].on=t.checked;else if(f==='every')rem[k].every=+t.value;else rem[k][f]=t.value;
+  setRem(rem);
+});
+$('#remEnable').addEventListener('click',async()=>{
+  const rem=getRem();
+  if(rem.on)rem.on=false;
+  else{rem.on=true;if(remPerm()==='default'){try{await Notification.requestPermission()}catch(e){}}}
+  setRem(rem);renderReminders();
+});
+$('#remTest').addEventListener('click',async()=>{
+  if(remPerm()==='default'){try{await Notification.requestPermission()}catch(e){}}
+  await notify('NourishLog reminders','This is how your reminders will look 🥗','test',true);
+  renderReminders();
+});
+
 /* ---------- boot ---------- */
 loadLocal();
 fillProfileForm();
 buildCatRow();
 renderAll();
 setAuthMode('login');
+startReminders();
 
 /* Claude-platform extras (AI plan & native download prompt) only activate when this page happens to
    run inside claude.ai's own preview/artifact frame; they no-op harmlessly everywhere else, including
